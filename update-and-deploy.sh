@@ -96,20 +96,63 @@ update_from_git() {
     # 检查网络连接
     if ! ping -c 1 github.com > /dev/null 2>&1; then
         print_error "无法连接到GitHub，网络可能有问题"
+        print_warning "建议使用TCP推送方式"
         return 1
     fi
     
     # 保存本地修改（如果有）
     git stash push -m "Auto stash before update $(date)" 2>/dev/null || true
     
-    # 拉取最新代码
+    # 尝试拉取最新代码
     if git pull origin main; then
         print_success "代码更新成功"
         git log --oneline -3
         return 0
     else
-        print_error "Git拉取失败"
-        return 1
+        print_error "Git拉取失败，尝试自动修复..."
+        
+        # 自动修复Git问题
+        fix_git_issues
+        
+        # 再次尝试拉取
+        if git pull origin main; then
+            print_success "修复后拉取成功"
+            git log --oneline -3
+            return 0
+        else
+            print_error "修复后仍然失败"
+            return 1
+        fi
+    fi
+}
+
+# Git问题自动修复
+fix_git_issues() {
+    print_step "自动修复Git问题..."
+    
+    # 1. 切换到HTTPS连接
+    current_url=$(git remote get-url origin 2>/dev/null || echo "")
+    if echo "$current_url" | grep -q "git@github.com:"; then
+        https_url=$(echo "$current_url" | sed 's/git@github.com:/https:\/\/github.com\//')
+        git remote set-url origin "$https_url"
+        print_success "已切换到HTTPS连接"
+    fi
+    
+    # 2. 清理Git缓存
+    git gc --prune=now 2>/dev/null || true
+    print_success "Git缓存已清理"
+    
+    # 3. 重置远程追踪
+    git fetch origin main 2>/dev/null || true
+    git branch --set-upstream-to=origin/main main 2>/dev/null || true
+    print_success "远程分支追踪已重置"
+    
+    # 4. 如果仍然失败，尝试强制同步
+    print_warning "尝试强制同步..."
+    if git fetch origin main 2>/dev/null && git reset --hard origin/main 2>/dev/null; then
+        print_success "强制同步成功"
+    else
+        print_error "强制同步也失败"
     fi
 }
 

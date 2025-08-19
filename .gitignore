@@ -70,3 +70,8 @@ archive/
 tcp-receiver.py
 tcp-push.py
 TCP-DEPLOYMENT.md
+
+# Git故障排查脚本（包含服务器信息）
+git-fix.sh
+quick-git-fix.sh
+GIT-TROUBLESHOOTING.md
