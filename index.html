@@ -913,9 +913,12 @@
         function drawResizeHandles() {
             const canvas = document.getElementById('crop-canvas');
             const ctx = canvas.getContext('2d');
-            const handleSize = 8;
+            const handleSize = 12; // 增大拖拽点
             
+            // 绘制更明显的拖拽点
             ctx.fillStyle = '#667eea';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
             
             // 四个角的拖拽点
             const handles = [
@@ -926,7 +929,11 @@
             ];
             
             handles.forEach(handle => {
-                ctx.fillRect(handle.x, handle.y, handleSize, handleSize);
+                // 绘制圆形拖拽点，更美观且更容易触摸
+                ctx.beginPath();
+                ctx.arc(handle.x + handleSize/2, handle.y + handleSize/2, handleSize/2, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
             });
         }
         
@@ -937,13 +944,24 @@
             let dragStart = { x: 0, y: 0 };
             let resizeCorner = null;
             
-            canvas.addEventListener('mousedown', function(e) {
+            // 获取触摸或鼠标坐标的统一函数
+            function getEventPos(e) {
                 const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                };
+            }
+            
+            // 统一的开始事件处理
+            function handleStart(e) {
+                e.preventDefault(); // 防止默认行为
+                const pos = getEventPos(e);
                 
                 // 检查是否点击在拖拽点上
-                const handleSize = 8;
+                const handleSize = 15; // 增大触摸区域
                 const handles = [
                     { x: cropSelection.x - handleSize/2, y: cropSelection.y - handleSize/2, corner: 'tl' },
                     { x: cropSelection.x + cropSelection.width - handleSize/2, y: cropSelection.y - handleSize/2, corner: 'tr' },
@@ -952,31 +970,34 @@
                 ];
                 
                 for (let handle of handles) {
-                    if (x >= handle.x && x <= handle.x + handleSize && y >= handle.y && y <= handle.y + handleSize) {
+                    if (pos.x >= handle.x && pos.x <= handle.x + handleSize && 
+                        pos.y >= handle.y && pos.y <= handle.y + handleSize) {
                         isResizing = true;
                         resizeCorner = handle.corner;
-                        dragStart = { x, y };
+                        dragStart = { x: pos.x, y: pos.y };
                         return;
                     }
                 }
                 
                 // 检查是否点击在选区内
-                if (x >= cropSelection.x && x <= cropSelection.x + cropSelection.width &&
-                    y >= cropSelection.y && y <= cropSelection.y + cropSelection.height) {
+                if (pos.x >= cropSelection.x && pos.x <= cropSelection.x + cropSelection.width &&
+                    pos.y >= cropSelection.y && pos.y <= cropSelection.y + cropSelection.height) {
                     isDragging = true;
-                    dragStart = { x: x - cropSelection.x, y: y - cropSelection.y };
+                    dragStart = { x: pos.x - cropSelection.x, y: pos.y - cropSelection.y };
                 }
-            });
+            }
             
-            canvas.addEventListener('mousemove', function(e) {
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+            // 统一的移动事件处理
+            function handleMove(e) {
+                if (!isDragging && !isResizing) return;
+                
+                e.preventDefault();
+                const pos = getEventPos(e);
                 
                 if (isResizing && resizeCorner) {
                     // 调整选区大小
-                    const dx = x - dragStart.x;
-                    const dy = y - dragStart.y;
+                    const dx = pos.x - dragStart.x;
+                    const dy = pos.y - dragStart.y;
                     
                     switch (resizeCorner) {
                         case 'tl':
@@ -1007,23 +1028,37 @@
                     cropSelection.width = Math.max(20, Math.min(cropSelection.width, canvas.width - cropSelection.x));
                     cropSelection.height = Math.max(20, Math.min(cropSelection.height, canvas.height - cropSelection.y));
                     
-                    dragStart = { x, y };
+                    dragStart = { x: pos.x, y: pos.y };
                     drawCropOverlay();
                 } else if (isDragging) {
                     // 移动选区
-                    cropSelection.x = Math.max(0, Math.min(x - dragStart.x, canvas.width - cropSelection.width));
-                    cropSelection.y = Math.max(0, Math.min(y - dragStart.y, canvas.height - cropSelection.height));
+                    cropSelection.x = Math.max(0, Math.min(pos.x - dragStart.x, canvas.width - cropSelection.width));
+                    cropSelection.y = Math.max(0, Math.min(pos.y - dragStart.y, canvas.height - cropSelection.height));
                     drawCropOverlay();
                 }
-            });
+            }
             
-            canvas.addEventListener('mouseup', function() {
+            // 统一的结束事件处理
+            function handleEnd(e) {
+                e.preventDefault();
                 isDragging = false;
                 isResizing = false;
                 resizeCorner = null;
-            });
+            }
             
-            // 双击重置选区
+            // 鼠标事件
+            canvas.addEventListener('mousedown', handleStart);
+            canvas.addEventListener('mousemove', handleMove);
+            canvas.addEventListener('mouseup', handleEnd);
+            canvas.addEventListener('mouseleave', handleEnd);
+            
+            // 触摸事件
+            canvas.addEventListener('touchstart', handleStart, { passive: false });
+            canvas.addEventListener('touchmove', handleMove, { passive: false });
+            canvas.addEventListener('touchend', handleEnd, { passive: false });
+            canvas.addEventListener('touchcancel', handleEnd, { passive: false });
+            
+            // 双击/双触重置选区
             canvas.addEventListener('dblclick', function() {
                 cropSelection = {
                     x: 0,
@@ -1032,6 +1067,24 @@
                     height: canvas.height
                 };
                 drawCropOverlay();
+            });
+            
+            // 双触重置（移动端）
+            let lastTap = 0;
+            canvas.addEventListener('touchend', function(e) {
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTap;
+                if (tapLength < 500 && tapLength > 0) {
+                    e.preventDefault();
+                    cropSelection = {
+                        x: 0,
+                        y: 0,
+                        width: canvas.width,
+                        height: canvas.height
+                    };
+                    drawCropOverlay();
+                }
+                lastTap = currentTime;
             });
         }
         
