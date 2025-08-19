@@ -404,14 +404,67 @@
         </div>
     </div>
 
+    <!-- 扫描增强模态框 -->
+    <div id="scan-modal" class="modal">
+        <div class="modal-content scale-in">
+            <div class="modal-header">
+                <h2 class="modal-title">📱 智能扫描增强</h2>
+                <span class="close" onclick="closeScanModal()">&times;</span>
+            </div>
+            <div class="crop-container">
+                <div style="display: flex; gap: 20px; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <h4 style="margin-bottom: 10px; color: #2d3748;">原图</h4>
+                        <canvas id="scan-original" class="crop-preview" style="max-width: 300px;"></canvas>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 style="margin-bottom: 10px; color: #2d3748;">预览</h4>
+                        <canvas id="scan-preview" class="crop-preview" style="max-width: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="crop-controls" style="margin: 20px 0;">
+                <h4 style="margin-bottom: 15px; color: #2d3748; text-align: center;">选择扫描风格</h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-secondary scan-style-btn" data-style="original" onclick="applyScanStyle('original')">📄 原图</button>
+                    <button class="btn btn-secondary scan-style-btn" data-style="grayscale" onclick="applyScanStyle('grayscale')">⚫ 灰度</button>
+                    <button class="btn btn-secondary scan-style-btn" data-style="blackwhite" onclick="applyScanStyle('blackwhite')">⚪ 黑白</button>
+                    <button class="btn btn-secondary scan-style-btn" data-style="enhanced" onclick="applyScanStyle('enhanced')">✨ 增强</button>
+                    <button class="btn btn-secondary scan-style-btn" data-style="magazine" onclick="applyScanStyle('magazine')">📘 杂志</button>
+                    <button class="btn btn-secondary scan-style-btn" data-style="whiteboard" onclick="applyScanStyle('whiteboard')">📋 白板</button>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn btn-secondary" onclick="autoDetectCorners()">🔍 自动检测边缘</button>
+                    <button class="btn btn-success" onclick="applyScanEnhancement()">✅ 应用增强</button>
+                    <button class="btn btn-danger" onclick="closeScanModal()">❌ 取消</button>
+                </div>
+            </div>
+            <div style="margin-top: 15px; padding: 15px; background: #f0f4ff; border-radius: 10px; font-size: 0.9rem; color: #4a5568;">
+                <p><strong>🚀 WPS级扫描增强功能：</strong></p>
+                <p>• <strong>自动检测：</strong>智能识别文档边界并自动校正透视</p>
+                <p>• <strong>增强模式：</strong>提升对比度和清晰度，适合文本文档</p>
+                <p>• <strong>黑白模式：</strong>智能二值化，突出文字内容</p>
+                <p>• <strong>杂志模式：</strong>保持色彩饱和度，适合彩色文档</p>
+                <p>• <strong>白板模式：</strong>特别优化白板和黑板内容</p>
+            </div>
+        </div>
+    </div>
+
     <!-- PDF生成库 -->
     <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <!-- 高级图像处理模块 -->
+    <script src="js/advanced-image-processor.js"></script>
     <script>
         let selectedImages = [];
         let currentCropIndex = -1;
         let cropSelection = null;
         let originalImageData = null;
         let rotationAngle = 0;
+        
+        // 扫描增强相关变量
+        let advancedProcessor = null;
+        let currentScanIndex = -1;
+        let currentScanStyle = 'enhanced';
         
         // 文件选择处理
         document.getElementById('file-input').addEventListener('change', function(e) {
@@ -463,6 +516,7 @@
                         <img src="${e.target.result}" alt="预览${index + 1}">
                         <div class="image-controls">
                             <button class="btn btn-secondary" onclick="openCropModal(${index})">✂️ 裁剪</button>
+                            <button class="btn btn-secondary" onclick="openScanModal(${index})">📱 扫描增强</button>
                             <button class="btn btn-secondary" onclick="moveUp(${index})" ${index === 0 ? 'disabled' : ''}>↑</button>
                             <button class="btn btn-secondary" onclick="moveDown(${index})" ${index === selectedImages.length - 1 ? 'disabled' : ''}>↓</button>
                             <button class="btn btn-danger" onclick="removeImage(${index})">🗑️</button>
@@ -1011,9 +1065,169 @@
             handleFiles([...files]);
         }
         
+        // 扫描增强功能
+        function openScanModal(index) {
+            currentScanIndex = index;
+            const modal = document.getElementById('scan-modal');
+            const originalCanvas = document.getElementById('scan-original');
+            const previewCanvas = document.getElementById('scan-preview');
+            
+            modal.style.display = 'block';
+            
+            // 初始化图像处理器
+            if (!advancedProcessor) {
+                advancedProcessor = new AdvancedImageProcessor();
+            }
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const img = new Image();
+                img.onload = async function() {
+                    // 设置原图画布
+                    const maxSize = 300;
+                    let { width, height } = img;
+                    
+                    if (width > maxSize || height > maxSize) {
+                        const ratio = Math.min(maxSize / width, maxSize / height);
+                        width *= ratio;
+                        height *= ratio;
+                    }
+                    
+                    originalCanvas.width = width;
+                    originalCanvas.height = height;
+                    previewCanvas.width = width;
+                    previewCanvas.height = height;
+                    
+                    const originalCtx = originalCanvas.getContext('2d');
+                    originalCtx.drawImage(img, 0, 0, width, height);
+                    
+                    // 初始化处理器
+                    advancedProcessor.init(previewCanvas);
+                    await advancedProcessor.loadImage(img);
+                    
+                    // 应用默认增强风格
+                    applyScanStyle('enhanced');
+                };
+                img.src = e.target.result;
+            };
+            
+            // 读取当前图片
+            const imageData = selectedImages[index];
+            if (imageData.croppedData) {
+                reader.readAsDataURL(imageData.croppedData);
+            } else {
+                reader.readAsDataURL(imageData.file);
+            }
+        }
+        
+        function applyScanStyle(style) {
+            if (!advancedProcessor) return;
+            
+            currentScanStyle = style;
+            
+            // 重置高亮状态
+            document.querySelectorAll('.scan-style-btn').forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-secondary');
+            });
+            
+            // 高亮当前选中的按钮
+            const currentBtn = document.querySelector(`[data-style="${style}"]`);
+            if (currentBtn) {
+                currentBtn.classList.remove('btn-secondary');
+                currentBtn.classList.add('btn-success');
+            }
+            
+            try {
+                // 应用扫描风格
+                const processedData = advancedProcessor.applyScanningStyles(style);
+                showNotification(`已应用 ${getStyleName(style)} 风格`, 'success');
+            } catch (error) {
+                console.error('扫描风格应用失败:', error);
+                showNotification('扫描风格应用失败，请重试', 'error');
+            }
+        }
+        
+        function getStyleName(style) {
+            const names = {
+                'original': '原图',
+                'grayscale': '灰度',
+                'blackwhite': '黑白',
+                'enhanced': '增强',
+                'magazine': '杂志',
+                'whiteboard': '白板'
+            };
+            return names[style] || '未知';
+        }
+        
+        async function autoDetectCorners() {
+            if (!advancedProcessor) return;
+            
+            showNotification('正在检测文档边界...', 'info');
+            
+            try {
+                // 检测文档角点
+                const corners = advancedProcessor.detectDocumentCorners();
+                
+                if (corners && corners.length >= 4) {
+                    // 应用透视校正
+                    const correctedCanvas = advancedProcessor.perspectiveCorrection(corners);
+                    
+                    // 更新预览
+                    const previewCanvas = document.getElementById('scan-preview');
+                    const previewCtx = previewCanvas.getContext('2d');
+                    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                    previewCtx.drawImage(correctedCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+                    
+                    showNotification('文档边界检测完成，已自动校正透视', 'success');
+                } else {
+                    showNotification('未能检测到清晰的文档边界，请手动调整', 'warning');
+                }
+            } catch (error) {
+                console.error('自动检测失败:', error);
+                showNotification('自动检测失败，请重试', 'error');
+            }
+        }
+        
+        function applyScanEnhancement() {
+            if (currentScanIndex < 0 || !advancedProcessor) return;
+            
+            try {
+                // 获取处理后的图像数据
+                const processedDataUrl = advancedProcessor.getProcessedImage();
+                
+                // 转换为blob并保存
+                fetch(processedDataUrl)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        selectedImages[currentScanIndex].croppedData = blob;
+                        selectedImages[currentScanIndex].processed = true;
+                        selectedImages[currentScanIndex].scanStyle = currentScanStyle;
+                        
+                        updatePreview();
+                        closeScanModal();
+                        showNotification(`图片已应用 ${getStyleName(currentScanStyle)} 扫描增强`, 'success');
+                    });
+            } catch (error) {
+                console.error('扫描增强应用失败:', error);
+                showNotification('扫描增强应用失败，请重试', 'error');
+            }
+        }
+        
+        function closeScanModal() {
+            document.getElementById('scan-modal').style.display = 'none';
+            currentScanIndex = -1;
+            
+            // 重置按钮状态
+            document.querySelectorAll('.scan-style-btn').forEach(btn => {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-secondary');
+            });
+        }
+        
         // 页面加载完成后的初始化
         document.addEventListener('DOMContentLoaded', function() {
-            showNotification('智能文档扫描器已就绪！', 'success');
+            showNotification('智能文档扫描器已就绪！支持WPS级扫描增强功能', 'success');
         });
     </script>
 </body>
