@@ -100,8 +100,8 @@ update_from_git() {
         return 1
     fi
     
-    # 保存本地修改（如果有）
-    git stash push -m "Auto stash before update $(date)" 2>/dev/null || true
+    # 保存本地修改（如果有）- 兼容旧版Git
+    git stash save "Auto stash before update $(date)" 2>/dev/null || true
     
     # 尝试拉取最新代码
     if git pull origin main; then
