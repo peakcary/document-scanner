@@ -42,6 +42,9 @@ server-config.sh
 # 备份的自动部署脚本
 deploy-to-server.sh.backup
 
+# 归档目录
+archive/
+
 # 备份文件
 *~
 *.bak
