@@ -30,8 +30,20 @@ print_error() {
 # 服务器配置
 SERVER="47.92.236.28"
 SERVER_USER="root"
-SERVER_PASSWORD="Pp--9257"
 SERVER_PATH="/var/www/document-scanner"
+
+# 从环境变量或配置文件读取密码
+if [ -f ".env" ]; then
+    source .env
+fi
+
+if [ -z "$SERVER_PASSWORD" ]; then
+    echo "请设置服务器密码："
+    echo "方法1: 创建 .env 文件，添加 SERVER_PASSWORD=你的密码"
+    echo "方法2: 设置环境变量 export SERVER_PASSWORD=你的密码"
+    read -s -p "或现在输入密码: " SERVER_PASSWORD
+    echo ""
+fi
 
 echo "======================================"
 echo "  文档扫描器 - 快速部署到服务器"

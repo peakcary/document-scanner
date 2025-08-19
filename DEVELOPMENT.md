@@ -61,7 +61,7 @@ git push origin main
 git push origin main
 
 # 2. 连接服务器并手动更新
-sshpass -p 'Pp--9257' ssh root@47.92.236.28
+ssh root@47.92.236.28
 cd /var/www/document-scanner
 ./update-from-git.sh
 ```
@@ -70,7 +70,7 @@ cd /var/www/document-scanner
 
 ### 连接服务器
 ```bash
-sshpass -p 'Pp--9257' ssh root@47.92.236.28
+ssh root@47.92.236.28
 ```
 
 ### 常用服务器操作
@@ -138,7 +138,7 @@ git push origin main --force
 ### 3. 服务器更新失败
 ```bash
 # 连接服务器检查
-sshpass -p 'Pp--9257' ssh root@47.92.236.28
+ssh root@47.92.236.28
 
 # 检查网络连接
 ping github.com
@@ -226,7 +226,7 @@ curl -I http://47.92.236.28:8080
 | 一键部署 | `./deploy-to-server.sh` |
 | 查看日志 | `tail -f server.log` |
 | 重启服务 | `./update-from-git.sh` |
-| 连接服务器 | `sshpass -p 'Pp--9257' ssh root@47.92.236.28` |
+| 连接服务器 | `ssh root@47.92.236.28` |
 
 ---
 
