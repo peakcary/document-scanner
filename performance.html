@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>性能监控 - 文档扫描器</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metric {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .metric-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .metric-value {
+            font-size: 1.5rem;
+            color: #667eea;
+            font-weight: bold;
+        }
+        .logs {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .refresh-btn:hover {
+            background: #5a67d8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>文档扫描器 - 性能监控</h1>
+        <button class="refresh-btn" onclick="refreshMetrics()">刷新数据</button>
+        
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-title">页面加载时间</div>
+                <div class="metric-value" id="load-time">--</div>
+            </div>
+            <div class="metric">
+                <div class="metric-title">内存使用</div>
+                <div class="metric-value" id="memory-usage">--</div>
+            </div>
+            <div class="metric">
+                <div class="metric-title">图片处理时间</div>
+                <div class="metric-value" id="process-time">--</div>
+            </div>
+            <div class="metric">
+                <div class="metric-title">OpenCV状态</div>
+                <div class="metric-value" id="opencv-status">--</div>
+            </div>
+        </div>
+        
+        <h3>性能日志</h3>
+        <div class="logs" id="performance-logs">
+            加载中...
+        </div>
+    </div>
+
+    <script>
+        // 性能监控脚本
+        class PerformanceMonitor {
+            constructor() {
+                this.metrics = {
+                    loadTime: 0,
+                    memoryUsage: 0,
+                    processTime: 0,
+                    opencvStatus: 'Unknown'
+                };
+                this.logs = [];
+                this.init();
+            }
+
+            init() {
+                this.measureLoadTime();
+                this.checkMemoryUsage();
+                this.checkOpenCVStatus();
+                this.updateDisplay();
+                this.setupAutoRefresh();
+            }
+
+            measureLoadTime() {
+                window.addEventListener('load', () => {
+                    const loadTime = performance.now();
+                    this.metrics.loadTime = loadTime.toFixed(2);
+                    this.addLog(`页面加载完成: ${loadTime.toFixed(2)}ms`);
+                    this.updateDisplay();
+                });
+            }
+
+            checkMemoryUsage() {
+                if (performance.memory) {
+                    const memory = performance.memory;
+                    const usedMB = (memory.usedJSHeapSize / 1024 / 1024).toFixed(2);
+                    this.metrics.memoryUsage = usedMB;
+                    this.addLog(`内存使用: ${usedMB}MB`);
+                } else {
+                    this.metrics.memoryUsage = 'N/A';
+                    this.addLog('浏览器不支持内存监控');
+                }
+            }
+
+            checkOpenCVStatus() {
+                if (typeof cv !== 'undefined') {
+                    this.metrics.opencvStatus = '已加载';
+                    this.addLog('OpenCV.js 加载成功');
+                } else {
+                    this.metrics.opencvStatus = '未加载';
+                    this.addLog('OpenCV.js 未加载');
+                }
+            }
+
+            measureProcessingTime() {
+                // 模拟图片处理时间测量
+                const startTime = performance.now();
+                
+                // 这里应该是实际的图片处理代码
+                setTimeout(() => {
+                    const endTime = performance.now();
+                    const processTime = endTime - startTime;
+                    this.metrics.processTime = processTime.toFixed(2);
+                    this.addLog(`图片处理耗时: ${processTime.toFixed(2)}ms`);
+                    this.updateDisplay();
+                }, 100);
+            }
+
+            addLog(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                this.logs.unshift(`[${timestamp}] ${message}`);
+                if (this.logs.length > 50) {
+                    this.logs = this.logs.slice(0, 50);
+                }
+            }
+
+            updateDisplay() {
+                document.getElementById('load-time').textContent = this.metrics.loadTime + 'ms';
+                document.getElementById('memory-usage').textContent = this.metrics.memoryUsage + 'MB';
+                document.getElementById('process-time').textContent = this.metrics.processTime + 'ms';
+                document.getElementById('opencv-status').textContent = this.metrics.opencvStatus;
+                
+                const logsElement = document.getElementById('performance-logs');
+                logsElement.innerHTML = this.logs.join('\n');
+            }
+
+            setupAutoRefresh() {
+                setInterval(() => {
+                    this.checkMemoryUsage();
+                    this.updateDisplay();
+                }, 5000);
+            }
+
+            refresh() {
+                this.checkMemoryUsage();
+                this.checkOpenCVStatus();
+                this.measureProcessingTime();
+                this.addLog('性能数据已刷新');
+                this.updateDisplay();
+            }
+        }
+
+        // 初始化性能监控
+        const monitor = new PerformanceMonitor();
+
+        // 刷新按钮事件
+        function refreshMetrics() {
+            monitor.refresh();
+        }
+
+        // 检测网络状态
+        function checkNetworkStatus() {
+            if (navigator.onLine) {
+                monitor.addLog('网络连接正常');
+            } else {
+                monitor.addLog('网络连接断开');
+            }
+        }
+
+        window.addEventListener('online', () => {
+            monitor.addLog('网络已连接');
+            monitor.updateDisplay();
+        });
+
+        window.addEventListener('offline', () => {
+            monitor.addLog('网络已断开');
+            monitor.updateDisplay();
+        });
+
+        // 检测设备信息
+        function getDeviceInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookieEnabled: navigator.cookieEnabled,
+                screenResolution: `${screen.width}x${screen.height}`,
+                colorDepth: screen.colorDepth
+            };
+            
+            monitor.addLog(`设备信息: ${info.platform}, 分辨率: ${info.screenResolution}`);
+            return info;
+        }
+
+        // 页面加载完成后检测设备信息
+        window.addEventListener('load', getDeviceInfo);
+    </script>
+</body>
+</html>

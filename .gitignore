@@ -1,0 +1,56 @@
+# 日志文件
+*.log
+server.log
+
+# 临时文件
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Node模块（如果有）
+node_modules/
+
+# 编辑器配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+._.DS_Store
+**/.DS_Store
+**/._.DS_Store
+
+# 压缩文件
+*.tar.gz
+*.zip
+
+# 运行时文件
+*.pid
+
+# 环境变量
+.env
+.env.local
+
+# 备份文件
+*~
+*.bak
+*.backup
+
+# MacOS特定文件
+._*
+.AppleDouble
+.LSOverride
+
+# 部署相关的敏感信息
+.ssh/
+.keys/
+
+# 数据库文件
+*.db
+*.sqlite
+
+# 缓存文件
+.cache/
