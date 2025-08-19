@@ -336,17 +336,47 @@
         
         <div class="feature-grid">
             <div class="feature-item">📷 智能拍照</div>
-            <div class="feature-item">✂️ 图片裁剪</div>
+            <div class="feature-item">✂️ 自动裁剪</div>
+            <div class="feature-item">📱 扫描增强</div>
             <div class="feature-item">📄 PDF生成</div>
-            <div class="feature-item">📱 移动优化</div>
             <div class="feature-item">🔒 隐私保护</div>
             <div class="feature-item">⚡ 高速处理</div>
         </div>
         
+        <!-- 操作流程指引 -->
+        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 15px; padding: 20px; margin: 20px 0; text-align: center;">
+            <h3 style="color: #1565c0; margin-bottom: 15px; font-size: 1.2rem;">📋 智能扫描流程</h3>
+            <div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;">
+                    <div style="background: #2196f3; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 8px;">1</div>
+                    <span style="font-size: 0.9rem; color: #1565c0; font-weight: 600;">上传/拍照</span>
+                </div>
+                <div style="color: #9c27b0; font-size: 1.5rem;">→</div>
+                <div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;">
+                    <div style="background: #9c27b0; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 8px;">2</div>
+                    <span style="font-size: 0.9rem; color: #7b1fa2; font-weight: 600;">自动裁剪</span>
+                </div>
+                <div style="color: #ff5722; font-size: 1.5rem;">→</div>
+                <div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;">
+                    <div style="background: #ff5722; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 8px;">3</div>
+                    <span style="font-size: 0.9rem; color: #d84315; font-weight: 600;">扫描增强</span>
+                </div>
+                <div style="color: #4caf50; font-size: 1.5rem;">→</div>
+                <div style="display: flex; flex-direction: column; align-items: center; min-width: 120px;">
+                    <div style="background: #4caf50; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 8px;">4</div>
+                    <span style="font-size: 0.9rem; color: #388e3c; font-weight: 600;">生成PDF</span>
+                </div>
+            </div>
+            <p style="margin-top: 15px; color: #666; font-size: 0.85rem;">💡 上传图片后将自动弹出裁剪界面，完成裁剪后可选择扫描增强</p>
+        </div>
+        
         <div class="upload-section">
-            <label for="file-input" class="btn">📷 选择/拍摄照片</label>
+            <label for="file-input" class="btn" style="font-size: 1.1rem; padding: 18px 35px;">📷 选择/拍摄照片</label>
             <input type="file" id="file-input" class="file-input" multiple accept="image/*" capture="environment">
             <button class="btn btn-secondary" onclick="showDemo()">🎯 查看演示</button>
+            <p style="margin-top: 15px; color: #666; font-size: 0.9rem;">
+                💡 <strong>拍照提示：</strong>上传后会自动弹出裁剪界面，帮您精确选择文档区域
+            </p>
         </div>
         
         <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
@@ -395,11 +425,13 @@
                 <button class="btn btn-success" onclick="applyCrop()">✅ 应用裁剪</button>
                 <button class="btn btn-danger" onclick="closeCropModal()">❌ 取消</button>
             </div>
-            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; font-size: 0.9rem; color: #718096;">
-                <p><strong>💡 裁剪说明：</strong></p>
-                <p>• 在图片上拖拽选择要保留的区域</p>
-                <p>• 可以拖拽四个角来调整选区大小</p>
-                <p>• 双击图片可以快速选择整个图片</p>
+            <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 10px; font-size: 0.9rem; color: #2d5aa0;">
+                <p><strong>📸 智能裁剪工具：</strong></p>
+                <p>• 🖱️ <strong>拖拽选区：</strong>在图片上拖拽选择要保留的区域</p>
+                <p>• 📐 <strong>精细调整：</strong>拖拽四个蓝色方块来调整选区大小</p>
+                <p>• 🔄 <strong>旋转图片：</strong>点击旋转按钮调整图片方向</p>
+                <p>• ⚡ <strong>快速选择：</strong>双击图片可以快速选择整个图片</p>
+                <p style="margin-top: 10px; font-weight: 600; color: #1565c0;">✨ 裁剪后可继续进行扫描增强，获得更佳效果！</p>
             </div>
         </div>
     </div>
@@ -481,6 +513,7 @@
             }
             
             // 添加到现有图片列表
+            const startIndex = selectedImages.length;
             validFiles.forEach(file => {
                 selectedImages.push({
                     file: file,
@@ -491,6 +524,20 @@
             
             updatePreview();
             showNotification(`已添加 ${validFiles.length} 张图片`, 'success');
+            
+            // 如果只上传了一张图片，自动打开裁剪界面
+            if (validFiles.length === 1) {
+                setTimeout(() => {
+                    openCropModal(startIndex);
+                }, 500);
+            } else if (validFiles.length > 1) {
+                // 多张图片时询问是否批量处理
+                setTimeout(() => {
+                    if (confirm(`已上传 ${validFiles.length} 张图片，是否对第一张图片进行裁剪？\n\n点击确定：立即裁剪第一张\n点击取消：稍后手动裁剪`)) {
+                        openCropModal(startIndex);
+                    }
+                }, 500);
+            }
         }
         
         function updatePreview() {
@@ -842,6 +889,14 @@
                 updatePreview();
                 closeCropModal();
                 showNotification('图片裁剪完成', 'success');
+                
+                // 裁剪完成后询问是否进行扫描增强
+                const finishedIndex = currentCropIndex; // 保存当前索引
+                setTimeout(() => {
+                    if (confirm('裁剪完成！是否立即对此图片进行扫描增强？\n\n扫描增强可以提升图片质量，更适合文档扫描。')) {
+                        openScanModal(finishedIndex);
+                    }
+                }, 800);
             }, 'image/jpeg', 0.9);
         }
         
@@ -1062,6 +1117,10 @@
         function handleDrop(e) {
             const dt = e.dataTransfer;
             const files = dt.files;
+            
+            // 显示拖拽成功提示
+            showNotification('文件拖拽成功！正在处理...', 'info');
+            
             handleFiles([...files]);
         }
         
@@ -1227,7 +1286,7 @@
         
         // 页面加载完成后的初始化
         document.addEventListener('DOMContentLoaded', function() {
-            showNotification('智能文档扫描器已就绪！支持WPS级扫描增强功能', 'success');
+            showNotification('智能文档扫描器已就绪！📸 上传照片即可自动弹出裁剪界面', 'success');
         });
     </script>
 </body>
