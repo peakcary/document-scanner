@@ -8,14 +8,28 @@ set -e
 echo "🔄 服务器端自动部署脚本"
 echo "========================="
 
-# 检查是否在项目目录
-if [ ! -d ".git" ] && [ ! -f "index.html" ]; then
-    echo "❌ 请在项目目录执行此脚本"
-    echo "正确位置: cd /var/www/document-scanner"
-    exit 1
+# 检查并创建项目目录
+PROJECT_DIR="/var/www/document-scanner"
+
+if [ ! -d "$PROJECT_DIR" ]; then
+    echo "⚠️  项目目录不存在，正在创建..."
+    mkdir -p "$PROJECT_DIR"
+    
+    # 初始化Git仓库
+    cd "$PROJECT_DIR"
+    git init
+    git remote add origin https://github.com/peakcary/document-scanner.git 2>/dev/null || true
+    echo "✅ 项目目录已创建: $PROJECT_DIR"
+else
+    cd "$PROJECT_DIR"
+    echo "✅ 进入项目目录: $(pwd)"
 fi
 
-echo "✅ 当前在项目目录: $(pwd)"
+# 确保在正确目录
+if [ "$(pwd)" != "$PROJECT_DIR" ]; then
+    echo "❌ 无法进入项目目录: $PROJECT_DIR"
+    exit 1
+fi
 
 # 停止现有服务
 echo ""
