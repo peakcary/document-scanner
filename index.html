@@ -4,143 +4,470 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文档扫描器</title>
-    <link rel="stylesheet" href="css/style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        .status {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .alert {
+            background: #fef5e7;
+            border: 1px solid #f6ad55;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .alert h3 {
+            color: #c53030;
+            margin-bottom: 10px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+        }
+        .file-input {
+            display: none;
+        }
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+        .upload-area.drag-over {
+            border-color: #667eea;
+            background: #ebf8ff;
+        }
+        #preview-section {
+            margin-top: 30px;
+        }
+        .image-preview {
+            display: inline-block;
+            margin: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        .image-preview img {
+            width: 150px;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+        .image-controls {
+            padding: 10px;
+            text-align: center;
+            background: #f7fafc;
+        }
+        .image-controls button {
+            padding: 5px 10px;
+            margin: 2px;
+            font-size: 12px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .processing {
+            text-align: center;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .image-count {
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>文档扫描器</h1>
-            <p>将文档照片转换为高质量PDF扫描件</p>
+            <h1>📱 智能文档扫描器</h1>
+            <p>拍照上传，一键生成高质量PDF文档</p>
         </div>
-
-        <div class="upload-section">
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="camera">拍照</button>
-                <button class="tab-btn" data-tab="upload">上传图片</button>
-            </div>
-
-            <div class="tab-content active" id="camera-tab">
-                <div class="camera-container">
-                    <video id="video" autoplay playsinline></video>
-                    <canvas id="canvas" style="display: none;"></canvas>
-                    <div class="camera-controls">
-                        <button id="start-camera" class="btn primary">启动摄像头</button>
-                        <button id="capture" class="btn secondary" style="display: none;">拍照</button>
-                        <button id="switch-camera" class="btn secondary" style="display: none;">切换摄像头</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-content" id="upload-tab">
-                <div class="upload-area" id="upload-area">
-                    <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
-                    <div class="upload-text">
-                        <p>点击或拖拽图片到此处</p>
-                        <p class="upload-hint">支持多张图片上传</p>
-                    </div>
-                </div>
-            </div>
+        
+        <div class="alert">
+            <h3>📱 使用说明</h3>
+            <p><strong>操作步骤：</strong></p>
+            <ol style="text-align: left; margin-top: 10px;">
+                <li>点击下方按钮选择或拍摄照片</li>
+                <li>可以选择多张图片</li>
+                <li>预览确认后点击生成PDF</li>
+                <li>系统会自动下载PDF文件</li>
+            </ol>
         </div>
-
-        <div class="preview-section" id="preview-section" style="display: none;">
-            <h3>预览图片</h3>
-            <div class="image-list" id="image-list"></div>
-            <div class="controls">
-                <button id="clear-all" class="btn secondary">清空</button>
-                <button id="preview-processing" class="btn secondary">预览处理效果</button>
-                <button id="process-images" class="btn primary">处理并生成PDF</button>
+        
+        <div style="text-align: center;">
+            <label for="file-input" class="btn">📷 选择/拍摄照片</label>
+            <input type="file" id="file-input" class="file-input" multiple accept="image/*" capture="environment">
+            <button class="btn" onclick="testCamera()">🎥 测试摄像头</button>
+        </div>
+        
+        <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+            <p>📁 点击此处选择图片文件</p>
+            <p style="color: #718096; margin-top: 10px;">支持多张图片，JPG/PNG格式，或拖拽文件到此处</p>
+        </div>
+        
+        <div id="preview-section" style="display: none;">
+            <h3>预览图片 (<span id="image-count">0</span> 张)</h3>
+            <div id="image-list"></div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-success" id="generate-pdf-btn" onclick="generatePDF()">📄 生成PDF文档</button>
+                <button class="btn btn-danger" onclick="clearImages()">🗑️ 清空图片</button>
             </div>
         </div>
-
-        <div class="processing-preview-section" id="processing-preview-section" style="display: none;">
-            <h3>处理效果预览</h3>
-            <div class="processed-image-list" id="processed-image-list"></div>
-            <div class="controls">
-                <button id="back-to-preview" class="btn secondary">返回编辑</button>
-                <button id="confirm-processing" class="btn primary">确认并生成PDF</button>
+        
+        <div id="processing-section" style="display: none;">
+            <div class="processing">
+                <div class="spinner"></div>
+                <h3>正在生成PDF...</h3>
+                <p id="processing-status">准备中...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
             </div>
         </div>
-
-        <div class="processing-section" id="processing-section" style="display: none;">
-            <div class="progress-bar">
-                <div class="progress" id="progress"></div>
-            </div>
-            <p id="status-text">正在处理图片...</p>
-        </div>
-
-        <div class="result-section" id="result-section" style="display: none;">
-            <h3>处理完成</h3>
-            <div class="export-options">
-                <h4>导出格式</h4>
-                <div class="format-options">
-                    <label><input type="radio" name="format" value="pdf" checked> PDF</label>
-                    <label><input type="radio" name="format" value="zip"> ZIP压缩包</label>
-                </div>
-                <h4>页面尺寸</h4>
-                <div class="page-size-options">
-                    <label><input type="radio" name="pageSize" value="a4" checked> A4</label>
-                    <label><input type="radio" name="pageSize" value="a3"> A3</label>
-                    <label><input type="radio" name="pageSize" value="letter"> Letter</label>
-                </div>
-                <h4>其他选项</h4>
-                <div class="other-options">
-                    <label><input type="checkbox" id="ocr-text"> 启用OCR文字识别</label>
-                </div>
-            </div>
-            <div class="controls">
-                <button id="download-files" class="btn primary">下载文件</button>
-                <button id="start-over" class="btn secondary">重新开始</button>
-            </div>
+        
+        <div id="info" style="margin-top: 30px; padding: 20px; background: #f7fafc; border-radius: 8px;">
+            <h3>功能特性</h3>
+            <ul style="text-align: left; margin-top: 10px;">
+                <li>✅ 多图片批量处理</li>
+                <li>✅ 自动调整图片大小</li>
+                <li>✅ A4纸张格式输出</li>
+                <li>✅ 高质量PDF生成</li>
+                <li>✅ 移动端友好界面</li>
+            </ul>
         </div>
     </div>
 
-    <!-- 图片编辑模态框 -->
-    <div class="modal" id="image-editor-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>编辑图片</h3>
-                <button class="close-btn" id="close-editor">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="editor-container">
-                    <canvas id="editor-canvas"></canvas>
-                    <div class="corner-points" id="corner-points">
-                        <div class="corner-point" data-corner="0"></div>
-                        <div class="corner-point" data-corner="1"></div>
-                        <div class="corner-point" data-corner="2"></div>
-                        <div class="corner-point" data-corner="3"></div>
-                    </div>
-                </div>
-                <div class="editor-controls">
-                    <button id="auto-detect" class="btn secondary">自动检测边框</button>
-                    <button id="rotate-left" class="btn secondary">↺ 左转</button>
-                    <button id="rotate-right" class="btn secondary">↻ 右转</button>
-                    <button id="apply-changes" class="btn primary">应用修改</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 全屏预览模态框 -->
-    <div class="modal" id="fullscreen-modal">
-        <div class="modal-content fullscreen">
-            <button class="close-btn" id="close-fullscreen">&times;</button>
-            <div class="fullscreen-container">
-                <img id="fullscreen-image" src="" alt="">
-                <div class="fullscreen-controls">
-                    <button id="zoom-in" class="btn secondary">放大</button>
-                    <button id="zoom-out" class="btn secondary">缩小</button>
-                    <button id="zoom-reset" class="btn secondary">重置</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/opencv.js/4.8.0/opencv.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
-    <script src="js/image-processor.js"></script>
-    <script src="js/app.js"></script>
+    <!-- PDF生成库 -->
+    <script src="jspdf.min.js"></script>
+    <script>
+        let selectedImages = [];
+        
+        // 文件选择处理
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            handleFiles(files);
+        });
+        
+        function handleFiles(files) {
+            const validFiles = files.filter(file => file.type.startsWith('image/'));
+            
+            if (validFiles.length === 0) {
+                alert('请选择有效的图片文件！');
+                return;
+            }
+            
+            // 添加到现有图片列表
+            selectedImages.push(...validFiles);
+            updatePreview();
+        }
+        
+        function updatePreview() {
+            const imageList = document.getElementById('image-list');
+            const previewSection = document.getElementById('preview-section');
+            const imageCount = document.getElementById('image-count');
+            
+            imageList.innerHTML = '';
+            imageCount.textContent = selectedImages.length;
+            
+            if (selectedImages.length === 0) {
+                previewSection.style.display = 'none';
+                return;
+            }
+            
+            selectedImages.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'image-preview';
+                    div.innerHTML = `
+                        <div class="image-count">${index + 1}</div>
+                        <img src="${e.target.result}" alt="预览${index + 1}">
+                        <div class="image-controls">
+                            <button class="btn" onclick="moveUp(${index})" ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button class="btn" onclick="moveDown(${index})" ${index === selectedImages.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button class="btn btn-danger" onclick="removeImage(${index})">删除</button>
+                        </div>
+                    `;
+                    imageList.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            previewSection.style.display = 'block';
+        }
+        
+        function removeImage(index) {
+            selectedImages.splice(index, 1);
+            updatePreview();
+        }
+        
+        function moveUp(index) {
+            if (index > 0) {
+                [selectedImages[index], selectedImages[index - 1]] = [selectedImages[index - 1], selectedImages[index]];
+                updatePreview();
+            }
+        }
+        
+        function moveDown(index) {
+            if (index < selectedImages.length - 1) {
+                [selectedImages[index], selectedImages[index + 1]] = [selectedImages[index + 1], selectedImages[index]];
+                updatePreview();
+            }
+        }
+        
+        function clearImages() {
+            if (selectedImages.length > 0 && confirm('确定要清空所有图片吗？')) {
+                selectedImages = [];
+                updatePreview();
+            }
+        }
+        
+        async function generatePDF() {
+            if (selectedImages.length === 0) {
+                alert('请先选择图片！');
+                return;
+            }
+            
+            const processingSection = document.getElementById('processing-section');
+            const generateBtn = document.getElementById('generate-pdf-btn');
+            const progressFill = document.getElementById('progress-fill');
+            const statusText = document.getElementById('processing-status');
+            
+            // 显示处理界面
+            processingSection.style.display = 'block';
+            generateBtn.disabled = true;
+            
+            try {
+                // 创建PDF文档
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                // A4纸张尺寸 (210 x 297 mm)
+                const pageWidth = 210;
+                const pageHeight = 297;
+                const margin = 10;
+                const contentWidth = pageWidth - 2 * margin;
+                const contentHeight = pageHeight - 2 * margin;
+                
+                for (let i = 0; i < selectedImages.length; i++) {
+                    statusText.textContent = `处理第 ${i + 1}/${selectedImages.length} 张图片...`;
+                    progressFill.style.width = `${(i / selectedImages.length) * 100}%`;
+                    
+                    // 等待一帧以更新UI
+                    await new Promise(resolve => requestAnimationFrame(resolve));
+                    
+                    if (i > 0) {
+                        pdf.addPage();
+                    }
+                    
+                    // 读取图片
+                    const imageDataUrl = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(selectedImages[i]);
+                    });
+                    
+                    // 创建图片对象获取尺寸
+                    const img = await new Promise((resolve, reject) => {
+                        const image = new Image();
+                        image.onload = () => resolve(image);
+                        image.onerror = reject;
+                        image.src = imageDataUrl;
+                    });
+                    
+                    // 计算图片在页面中的尺寸，保持宽高比
+                    let imgWidth = contentWidth;
+                    let imgHeight = (img.height / img.width) * contentWidth;
+                    
+                    // 如果高度超出页面，按高度缩放
+                    if (imgHeight > contentHeight) {
+                        imgHeight = contentHeight;
+                        imgWidth = (img.width / img.height) * contentHeight;
+                    }
+                    
+                    // 居中放置
+                    const x = margin + (contentWidth - imgWidth) / 2;
+                    const y = margin + (contentHeight - imgHeight) / 2;
+                    
+                    // 添加图片到PDF
+                    pdf.addImage(imageDataUrl, 'JPEG', x, y, imgWidth, imgHeight);
+                }
+                
+                // 完成处理
+                statusText.textContent = '正在生成PDF文件...';
+                progressFill.style.width = '100%';
+                
+                // 生成文件名
+                const now = new Date();
+                const fileName = `文档扫描_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}.pdf`;
+                
+                // 下载PDF
+                pdf.save(fileName);
+                
+                // 显示成功信息
+                statusText.textContent = '✅ PDF生成完成！';
+                setTimeout(() => {
+                    processingSection.style.display = 'none';
+                    generateBtn.disabled = false;
+                    progressFill.style.width = '0%';
+                }, 2000);
+                
+                alert(`✅ PDF生成成功！\n\n文件名：${fileName}\n包含图片：${selectedImages.length} 张\n\n文件已自动下载到您的设备`);
+                
+            } catch (error) {
+                console.error('PDF生成失败:', error);
+                statusText.textContent = '❌ 生成失败';
+                alert('PDF生成失败，请重试！\n\n错误信息：' + error.message);
+                
+                processingSection.style.display = 'none';
+                generateBtn.disabled = false;
+                progressFill.style.width = '0%';
+            }
+        }
+        
+        function testCamera() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        alert('✅ 摄像头访问成功！\n\n如果要使用实时摄像头功能，需要HTTPS连接。\n\n当前建议使用图片上传功能。');
+                        stream.getTracks().forEach(track => track.stop());
+                    })
+                    .catch(function(err) {
+                        alert('❌ 摄像头访问失败\n\n原因：' + err.message + '\n\n解决方案：\n1. 检查浏览器权限设置\n2. 使用HTTPS连接\n3. 使用图片上传功能代替');
+                    });
+            } else {
+                alert('❌ 浏览器不支持摄像头功能\n\n请使用图片上传功能');
+            }
+        }
+        
+        // 拖拽上传支持
+        const uploadArea = document.getElementById('upload-area');
+        
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
+        });
+        
+        // 阻止默认的文件拖拽行为
+        document.addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+        
+        document.addEventListener('drop', function(e) {
+            e.preventDefault();
+        });
+    </script>
 </body>
 </html>
