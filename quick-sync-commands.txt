@@ -1,0 +1,52 @@
+# 🚀 服务器同步快速命令集
+
+## 本地操作（Mac终端）
+
+# 1. 进入项目目录
+cd /Users/peakom/document-scanner
+
+# 2. 上传代码包（输入密码：Pp--9257）
+scp document-scanner-latest.tar.gz root@47.92.236.28:/tmp/
+
+# 3. SSH登录服务器（输入密码：Pp--9257）
+ssh root@47.92.236.28
+
+## 服务器操作（SSH登录后执行）
+
+# 4. 进入项目目录
+cd /var/www/document-scanner
+
+# 5. 停止现有服务
+pkill -f "python3 -m http.server" 2>/dev/null || true
+
+# 6. 创建备份
+cp -r . ../document-scanner-backup-$(date +%Y%m%d_%H%M%S)
+
+# 7. 清空当前目录（保留.git）
+find . -maxdepth 1 -not -name '.' -not -name '.git' -exec rm -rf {} \;
+
+# 8. 解压最新代码
+tar -xzf /tmp/document-scanner-latest.tar.gz
+
+# 9. 设置权限
+chmod +x *.sh
+
+# 10. 修复Git兼容性（重要！）
+sed -i 's/git stash push -m/git stash save/g' *.sh
+
+# 11. 启动HTTP服务
+nohup python3 -m http.server 8080 --bind 0.0.0.0 > server.log 2>&1 &
+
+# 12. 验证服务（等待3秒后执行）
+sleep 3
+ps aux | grep python3
+curl -I http://localhost:8080
+
+## 验证访问
+# 浏览器访问：http://47.92.236.28:8080
+
+## 故障排查命令
+# 查看日志：tail -f server.log
+# 检查进程：ps aux | grep python3
+# 检查端口：netstat -tlpn | grep 8080
+# 重启服务：pkill -f python3 && nohup python3 -m http.server 8080 --bind 0.0.0.0 > server.log 2>&1 &
