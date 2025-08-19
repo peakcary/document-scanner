@@ -65,3 +65,8 @@ archive/
 
 # 缓存文件
 .cache/
+
+# TCP推送脚本（包含服务器信息）
+tcp-receiver.py
+tcp-push.py
+TCP-DEPLOYMENT.md

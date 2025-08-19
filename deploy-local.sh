@@ -28,10 +28,115 @@ print_error() {
     echo -e "${RED}[错误]${NC} $1"
 }
 
-echo "======================================"
-echo "  文档扫描器 - 本地Git助手"
-echo "  检查、提交、推送本地修改"
-echo "======================================"
+show_deployment_options() {
+    print_warning "📋 选择部署方式:"
+    echo "1. 标准Git部署（推荐）"
+    echo "2. TCP直接推送（网络不稳定时使用）"
+    echo ""
+    read -p "请选择部署方式 (1/2): " -n 1 -r
+    echo ""
+    
+    case $REPLY in
+        1)
+            show_git_deployment_steps
+            ;;
+        2)
+            perform_tcp_push
+            ;;
+        *)
+            show_git_deployment_steps
+            ;;
+    esac
+}
+
+show_git_deployment_steps() {
+    print_warning "📋 Git部署流程:"
+    echo "1. SSH登录服务器:"
+    echo "   ssh root@47.92.236.28"
+    echo ""
+    echo "2. 进入项目目录:"
+    echo "   cd /var/www/document-scanner"
+    echo ""
+    echo "3. 拉取最新代码:"
+    echo "   git pull origin main"
+    echo ""
+    echo "4. 执行部署脚本:"
+    echo "   ./update-and-deploy.sh"
+    echo ""
+    echo "5. 验证部署结果:"
+    echo "   访问 http://47.92.236.28:8080"
+}
+
+perform_tcp_push() {
+    print_step "🚀 启动TCP推送..."
+    
+    if [ ! -f "tcp-push.py" ]; then
+        print_error "TCP推送脚本不存在: tcp-push.py"
+        print_error "请确保项目文件完整"
+        exit 1
+    fi
+    
+    # 检查Python
+    if command -v python3 &> /dev/null; then
+        PYTHON_CMD="python3"
+    elif command -v python &> /dev/null; then
+        PYTHON_CMD="python"
+    else
+        print_error "未找到Python环境"
+        exit 1
+    fi
+    
+    echo ""
+    print_warning "⚠️  TCP推送注意事项:"
+    echo "1. 确保服务器端TCP接收服务正在运行"
+    echo "2. 确保防火墙开放9999端口"
+    echo "3. TCP推送完成后仍需手动执行部署脚本"
+    echo ""
+    
+    read -p "确认继续TCP推送? (y/N): " -n 1 -r
+    echo ""
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        print_step "执行TCP推送..."
+        $PYTHON_CMD tcp-push.py
+        
+        if [ $? -eq 0 ]; then
+            echo ""
+            print_success "🎉 TCP推送完成！"
+            echo ""
+            print_warning "📋 下一步手动部署流程:"
+            echo "1. SSH登录服务器:"
+            echo "   ssh root@47.92.236.28"
+            echo ""
+            echo "2. 进入项目目录:"
+            echo "   cd /var/www/document-scanner"
+            echo ""
+            echo "3. 停止TCP服务(如果正在运行):"
+            echo "   Ctrl+C"
+            echo ""
+            echo "4. 执行部署脚本:"
+            echo "   ./update-and-deploy.sh"
+            echo ""
+            echo "5. 验证部署结果:"
+            echo "   访问 http://47.92.236.28:8080"
+        else
+            print_error "TCP推送失败"
+            echo ""
+            print_warning "可尝试以下解决方案:"
+            echo "1. 检查网络连接: ping 47.92.236.28"
+            echo "2. 确认服务器端TCP服务: ssh root@47.92.236.28"
+            echo "3. 使用Git部署方式"
+        fi
+    else
+        print_warning "TCP推送取消"
+        show_git_deployment_steps
+    fi
+}
+
+echo "========================================"
+echo "  文档扫描器 - 本地部署助手"
+echo "  Git推送 + TCP推送双重保障"
+echo "========================================"
 
 # 检查是否在项目目录
 if [ ! -f "index.html" ]; then
@@ -78,11 +183,24 @@ if [ -z "$UNCOMMITTED_CHANGES" ]; then
     fi
     
     echo ""
-    print_success "🎯 下一步操作提醒:"
-    echo "1. SSH登录服务器: ssh root@47.92.236.28"
-    echo "2. 进入项目目录: cd /var/www/document-scanner"
-    echo "3. 拉取最新代码: git pull origin main"
-    echo "4. 执行部署脚本: ./update-and-deploy.sh"
+    print_success "🎯 选择部署方式:"
+    echo "1. 标准Git部署（推荐）"
+    echo "2. TCP直接推送（网络不稳定时使用）"
+    echo ""
+    read -p "请选择部署方式 (1/2): " -n 1 -r
+    echo ""
+    
+    case $REPLY in
+        1)
+            show_git_deployment_steps
+            ;;
+        2)
+            perform_tcp_push
+            ;;
+        *)
+            show_git_deployment_steps
+            ;;
+    esac
     exit 0
 fi
 
@@ -134,24 +252,19 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
             echo ""
             print_success "🚀 Git操作完成！"
             echo ""
-            print_warning "📋 下一步手动部署流程:"
-            echo "1. SSH登录服务器:"
-            echo "   ssh root@47.92.236.28"
-            echo ""
-            echo "2. 进入项目目录:"
-            echo "   cd /var/www/document-scanner"
-            echo ""
-            echo "3. 拉取最新代码:"
-            echo "   git pull origin main"
-            echo ""
-            echo "4. 执行部署脚本:"
-            echo "   ./update-and-deploy.sh"
-            echo ""
-            echo "5. 验证部署结果:"
-            echo "   访问 http://47.92.236.28:8080"
+            show_deployment_options
         else
-            print_error "推送失败"
-            exit 1
+            print_error "Git推送失败"
+            echo ""
+            print_warning "Git推送失败，是否尝试TCP推送?"
+            read -p "使用TCP推送到服务器? (y/N): " -n 1 -r
+            echo ""
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                perform_tcp_push
+            else
+                print_error "部署终止"
+                exit 1
+            fi
         fi
     else
         print_warning "修改已提交到本地，但未推送到远程"
