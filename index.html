@@ -965,7 +965,7 @@
         function drawResizeHandles() {
             const canvas = document.getElementById('crop-canvas');
             const ctx = canvas.getContext('2d');
-            const handleSize = 20; // WPS风格的更大拖拽点
+            const handleSize = 24; // 更大的WPS风格拖拽点
             
             // 四个角的拖拽点位置
             const handles = [
@@ -976,22 +976,43 @@
             ];
             
             handles.forEach(handle => {
-                // 绘制WPS风格的圆形拖拽点
-                ctx.fillStyle = '#1890ff';
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 3;
+                // 绘制WPS风格的圆形拖拽点 - 带阴影效果
+                ctx.save();
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+                ctx.shadowBlur = 6;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                
+                // 外圈 - 白色边框
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#1890ff';
+                ctx.lineWidth = 4;
                 
                 ctx.beginPath();
                 ctx.arc(handle.x, handle.y, handleSize/2, 0, 2 * Math.PI);
                 ctx.fill();
                 ctx.stroke();
                 
-                // 添加内部小圆点，增强视觉效果
+                ctx.restore();
+                
+                // 内圈 - 蓝色填充
+                ctx.fillStyle = '#1890ff';
+                ctx.beginPath();
+                ctx.arc(handle.x, handle.y, (handleSize/2) - 5, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // 中心点 - 白色小点，增强视觉效果
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(handle.x, handle.y, 3, 0, 2 * Math.PI);
+                ctx.arc(handle.x, handle.y, 2, 0, 2 * Math.PI);
                 ctx.fill();
             });
+            
+            // 保存拖拽点信息，用于检测拖拽
+            window.resizeHandles = handles.map(handle => ({
+                ...handle,
+                radius: handleSize / 2
+            }));
         }
         
         // 添加辅助网格线功能
@@ -999,36 +1020,56 @@
             const canvas = document.getElementById('crop-canvas');
             const ctx = canvas.getContext('2d');
             
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            // WPS风格的辅助网格线
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
             ctx.lineWidth = 1;
-            ctx.setLineDash([5, 5]);
+            ctx.setLineDash([4, 4]);
             
-            // 绘制三分线网格
+            // 绘制三分线网格（黄金分割线）
             const x1 = cropSelection.x + cropSelection.width / 3;
             const x2 = cropSelection.x + (cropSelection.width * 2) / 3;
             const y1 = cropSelection.y + cropSelection.height / 3;
             const y2 = cropSelection.y + (cropSelection.height * 2) / 3;
             
-            // 垂直线
+            // 垂直分割线
             ctx.beginPath();
-            ctx.moveTo(x1, cropSelection.y);
-            ctx.lineTo(x1, cropSelection.y + cropSelection.height);
+            ctx.moveTo(x1, cropSelection.y + 3);
+            ctx.lineTo(x1, cropSelection.y + cropSelection.height - 3);
             ctx.stroke();
             
             ctx.beginPath();
-            ctx.moveTo(x2, cropSelection.y);
-            ctx.lineTo(x2, cropSelection.y + cropSelection.height);
+            ctx.moveTo(x2, cropSelection.y + 3);
+            ctx.lineTo(x2, cropSelection.y + cropSelection.height - 3);
             ctx.stroke();
             
-            // 水平线
+            // 水平分割线
             ctx.beginPath();
-            ctx.moveTo(cropSelection.x, y1);
-            ctx.lineTo(cropSelection.x + cropSelection.width, y1);
+            ctx.moveTo(cropSelection.x + 3, y1);
+            ctx.lineTo(cropSelection.x + cropSelection.width - 3, y1);
             ctx.stroke();
             
             ctx.beginPath();
-            ctx.moveTo(cropSelection.x, y2);
-            ctx.lineTo(cropSelection.x + cropSelection.width, y2);
+            ctx.moveTo(cropSelection.x + 3, y2);
+            ctx.lineTo(cropSelection.x + cropSelection.width - 3, y2);
+            ctx.stroke();
+            
+            // 中心十字线（更细更明显）
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.setLineDash([6, 3]);
+            
+            const centerX = cropSelection.x + cropSelection.width / 2;
+            const centerY = cropSelection.y + cropSelection.height / 2;
+            
+            // 中心垂直线
+            ctx.beginPath();
+            ctx.moveTo(centerX, cropSelection.y + 8);
+            ctx.lineTo(centerX, cropSelection.y + cropSelection.height - 8);
+            ctx.stroke();
+            
+            // 中心水平线
+            ctx.beginPath();
+            ctx.moveTo(cropSelection.x + 8, centerY);
+            ctx.lineTo(cropSelection.x + cropSelection.width - 8, centerY);
             ctx.stroke();
             
             // 重置虚线样式
