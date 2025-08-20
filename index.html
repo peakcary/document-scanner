@@ -316,8 +316,47 @@
             margin: 20px 0;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
+        }
+        
+        /* 裁剪操作按钮样式 */
+        .crop-action-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            min-width: 70px;
+        }
+        .reset-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+        .rotate-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+        .apply-btn {
+            background: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        .apply-btn:hover {
+            background: #218838;
+            border-color: #1e7e34;
+        }
+        .cancel-btn {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+        .cancel-btn:hover {
+            background: #c82333;
+            border-color: #bd2130;
         }
         
         /* 扫描增强界面样式 */
@@ -613,25 +652,20 @@
     <div id="crop-modal" class="modal">
         <div class="modal-content scale-in">
             <div class="modal-header">
-                <h2 class="modal-title">✂️ 裁剪图片</h2>
+                <h2 class="modal-title">裁剪文档</h2>
                 <span class="close" onclick="closeCropModal()">&times;</span>
             </div>
             <div class="crop-container">
                 <canvas id="crop-canvas" class="crop-preview"></canvas>
             </div>
             <div class="crop-controls">
-                <button class="btn btn-secondary" onclick="resetCrop()">🔄 重置</button>
-                <button class="btn btn-secondary" onclick="rotateCrop()">↻ 旋转</button>
-                <button class="btn btn-success" onclick="applyCrop()">✅ 应用裁剪</button>
-                <button class="btn btn-danger" onclick="closeCropModal()">❌ 取消</button>
+                <button class="crop-action-btn reset-btn" onclick="resetCrop()">🔄 重置</button>
+                <button class="crop-action-btn rotate-btn" onclick="rotateCrop()">↻ 旋转</button>
+                <button class="crop-action-btn apply-btn" onclick="applyCrop()">✓ 确定</button>
+                <button class="crop-action-btn cancel-btn" onclick="closeCropModal()">✕ 取消</button>
             </div>
-            <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 10px; font-size: 0.9rem; color: #2d5aa0;">
-                <p><strong>📸 智能裁剪工具：</strong></p>
-                <p>• 🖱️ <strong>拖拽选区：</strong>在图片上拖拽选择要保留的区域</p>
-                <p>• 📐 <strong>精细调整：</strong>拖拽四个蓝色方块来调整选区大小</p>
-                <p>• 🔄 <strong>旋转图片：</strong>点击旋转按钮调整图片方向</p>
-                <p>• ⚡ <strong>快速选择：</strong>双击图片可以快速选择整个图片</p>
-                <p style="margin-top: 10px; font-weight: 600; color: #1565c0;">✨ 裁剪后可继续进行扫描增强，获得更佳效果！</p>
+            <div style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 0.85rem; color: #6c757d; text-align: center;">
+                <p>拖动蓝色圆点调整裁剪区域，双击重置</p>
             </div>
         </div>
     </div>
@@ -892,49 +926,113 @@
                 ctx.restore();
             }
             
-            // 绘制遮罩
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            // 绘制半透明遮罩，类似WPS样式
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // 清除选中区域
+            // 清除选中区域，显示原图
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillRect(cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height);
             
-            // 绘制选区边框
+            // 重新绘制选中区域的原图（确保清晰显示）
             ctx.globalCompositeOperation = 'source-over';
-            ctx.strokeStyle = '#667eea';
-            ctx.lineWidth = 2;
+            if (originalImageData) {
+                const { img } = originalImageData;
+                ctx.drawImage(
+                    img, 
+                    cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height,
+                    cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height
+                );
+            }
+            
+            // 绘制选区边框 - 使用WPS风格的蓝色边框
+            ctx.strokeStyle = '#1890ff';
+            ctx.lineWidth = 3;
             ctx.strokeRect(cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height);
+            
+            // 绘制内边框线，增强视觉效果
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(cropSelection.x + 1, cropSelection.y + 1, cropSelection.width - 2, cropSelection.height - 2);
             
             // 绘制拖拽点
             drawResizeHandles();
+            
+            // 绘制辅助网格线
+            drawGridLines();
         }
         
         function drawResizeHandles() {
             const canvas = document.getElementById('crop-canvas');
             const ctx = canvas.getContext('2d');
-            const handleSize = 12; // 增大拖拽点
+            const handleSize = 20; // WPS风格的更大拖拽点
             
-            // 绘制更明显的拖拽点
-            ctx.fillStyle = '#667eea';
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            
-            // 四个角的拖拽点
+            // 四个角的拖拽点位置
             const handles = [
-                { x: cropSelection.x - handleSize/2, y: cropSelection.y - handleSize/2 },
-                { x: cropSelection.x + cropSelection.width - handleSize/2, y: cropSelection.y - handleSize/2 },
-                { x: cropSelection.x - handleSize/2, y: cropSelection.y + cropSelection.height - handleSize/2 },
-                { x: cropSelection.x + cropSelection.width - handleSize/2, y: cropSelection.y + cropSelection.height - handleSize/2 }
+                { x: cropSelection.x, y: cropSelection.y, position: 'tl' },
+                { x: cropSelection.x + cropSelection.width, y: cropSelection.y, position: 'tr' },
+                { x: cropSelection.x, y: cropSelection.y + cropSelection.height, position: 'bl' },
+                { x: cropSelection.x + cropSelection.width, y: cropSelection.y + cropSelection.height, position: 'br' }
             ];
             
             handles.forEach(handle => {
-                // 绘制圆形拖拽点，更美观且更容易触摸
+                // 绘制WPS风格的圆形拖拽点
+                ctx.fillStyle = '#1890ff';
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                
                 ctx.beginPath();
-                ctx.arc(handle.x + handleSize/2, handle.y + handleSize/2, handleSize/2, 0, 2 * Math.PI);
+                ctx.arc(handle.x, handle.y, handleSize/2, 0, 2 * Math.PI);
                 ctx.fill();
                 ctx.stroke();
+                
+                // 添加内部小圆点，增强视觉效果
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(handle.x, handle.y, 3, 0, 2 * Math.PI);
+                ctx.fill();
             });
+        }
+        
+        // 添加辅助网格线功能
+        function drawGridLines() {
+            const canvas = document.getElementById('crop-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            
+            // 绘制三分线网格
+            const x1 = cropSelection.x + cropSelection.width / 3;
+            const x2 = cropSelection.x + (cropSelection.width * 2) / 3;
+            const y1 = cropSelection.y + cropSelection.height / 3;
+            const y2 = cropSelection.y + (cropSelection.height * 2) / 3;
+            
+            // 垂直线
+            ctx.beginPath();
+            ctx.moveTo(x1, cropSelection.y);
+            ctx.lineTo(x1, cropSelection.y + cropSelection.height);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x2, cropSelection.y);
+            ctx.lineTo(x2, cropSelection.y + cropSelection.height);
+            ctx.stroke();
+            
+            // 水平线
+            ctx.beginPath();
+            ctx.moveTo(cropSelection.x, y1);
+            ctx.lineTo(cropSelection.x + cropSelection.width, y1);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(cropSelection.x, y2);
+            ctx.lineTo(cropSelection.x + cropSelection.width, y2);
+            ctx.stroke();
+            
+            // 重置虚线样式
+            ctx.setLineDash([]);
         }
         
         function initCropEvents() {
@@ -960,18 +1058,18 @@
                 e.preventDefault(); // 防止默认行为
                 const pos = getEventPos(e);
                 
-                // 检查是否点击在拖拽点上
-                const handleSize = 15; // 增大触摸区域
+                // 检查是否点击在拖拽点上（WPS风格的圆形拖拽点）
+                const handleRadius = 15; // 触摸检测半径
                 const handles = [
-                    { x: cropSelection.x - handleSize/2, y: cropSelection.y - handleSize/2, corner: 'tl' },
-                    { x: cropSelection.x + cropSelection.width - handleSize/2, y: cropSelection.y - handleSize/2, corner: 'tr' },
-                    { x: cropSelection.x - handleSize/2, y: cropSelection.y + cropSelection.height - handleSize/2, corner: 'bl' },
-                    { x: cropSelection.x + cropSelection.width - handleSize/2, y: cropSelection.y + cropSelection.height - handleSize/2, corner: 'br' }
+                    { x: cropSelection.x, y: cropSelection.y, corner: 'tl' },
+                    { x: cropSelection.x + cropSelection.width, y: cropSelection.y, corner: 'tr' },
+                    { x: cropSelection.x, y: cropSelection.y + cropSelection.height, corner: 'bl' },
+                    { x: cropSelection.x + cropSelection.width, y: cropSelection.y + cropSelection.height, corner: 'br' }
                 ];
                 
                 for (let handle of handles) {
-                    if (pos.x >= handle.x && pos.x <= handle.x + handleSize && 
-                        pos.y >= handle.y && pos.y <= handle.y + handleSize) {
+                    const distance = Math.sqrt(Math.pow(pos.x - handle.x, 2) + Math.pow(pos.y - handle.y, 2));
+                    if (distance <= handleRadius) {
                         isResizing = true;
                         resizeCorner = handle.corner;
                         dragStart = { x: pos.x, y: pos.y };
