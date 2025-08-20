@@ -597,6 +597,65 @@
             from { transform: scale(0.9); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
         }
+        
+        /* 新的裁剪界面样式 */
+        .crop-mask {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+        
+        .crop-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #4299e1;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transform: translate(-50%, -50%);
+            transition: all 0.2s ease;
+        }
+        
+        .crop-handle:hover {
+            background: #3182ce;
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+        
+        .crop-handle-nw { top: 0; left: 0; cursor: nw-resize; }
+        .crop-handle-n { top: 0; left: 50%; cursor: n-resize; }
+        .crop-handle-ne { top: 0; right: 0; cursor: ne-resize; }
+        .crop-handle-e { top: 50%; right: 0; cursor: e-resize; }
+        .crop-handle-se { bottom: 0; right: 0; cursor: se-resize; }
+        .crop-handle-s { bottom: 0; left: 50%; cursor: s-resize; }
+        .crop-handle-sw { bottom: 0; left: 0; cursor: sw-resize; }
+        .crop-handle-w { top: 50%; left: 0; cursor: w-resize; }
+        
+        .crop-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .crop-grid-line {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+        
+        .crop-grid-h {
+            width: 100%;
+            height: 1px;
+        }
+        
+        .crop-grid-v {
+            height: 100%;
+            width: 1px;
+        }
     </style>
 </head>
 <body>
@@ -650,13 +709,51 @@
 
     <!-- 图片裁剪模态框 -->
     <div id="crop-modal" class="modal">
-        <div class="modal-content scale-in">
+        <div class="modal-content scale-in" style="max-width: 90vw; max-height: 90vh;">
             <div class="modal-header">
                 <h2 class="modal-title">裁剪文档</h2>
                 <span class="close" onclick="closeCropModal()">&times;</span>
             </div>
             <div class="crop-container">
-                <canvas id="crop-canvas" class="crop-preview"></canvas>
+                <div id="crop-image-container" style="position: relative; display: inline-block; max-width: 100%; margin: 0 auto;">
+                    <img id="crop-image" style="max-width: 100%; max-height: 60vh; display: block;" />
+                    
+                    <!-- 裁剪遮罩和选择框 -->
+                    <div id="crop-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                        <!-- 四个遮罩区域 -->
+                        <div id="crop-mask-top" class="crop-mask"></div>
+                        <div id="crop-mask-bottom" class="crop-mask"></div>
+                        <div id="crop-mask-left" class="crop-mask"></div>
+                        <div id="crop-mask-right" class="crop-mask"></div>
+                        
+                        <!-- 裁剪选择框 -->
+                        <div id="crop-selection" style="position: absolute; border: 2px solid #4299e1; pointer-events: all; cursor: move;">
+                            <!-- 八个调整点 -->
+                            <div class="crop-handle crop-handle-nw" data-handle="nw"></div>
+                            <div class="crop-handle crop-handle-n" data-handle="n"></div>
+                            <div class="crop-handle crop-handle-ne" data-handle="ne"></div>
+                            <div class="crop-handle crop-handle-e" data-handle="e"></div>
+                            <div class="crop-handle crop-handle-se" data-handle="se"></div>
+                            <div class="crop-handle crop-handle-s" data-handle="s"></div>
+                            <div class="crop-handle crop-handle-sw" data-handle="sw"></div>
+                            <div class="crop-handle crop-handle-w" data-handle="w"></div>
+                            
+                            <!-- 网格线 -->
+                            <div class="crop-grid">
+                                <div class="crop-grid-line crop-grid-h" style="top: 33.33%;"></div>
+                                <div class="crop-grid-line crop-grid-h" style="top: 66.66%;"></div>
+                                <div class="crop-grid-line crop-grid-v" style="left: 33.33%;"></div>
+                                <div class="crop-grid-line crop-grid-v" style="left: 66.66%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 预览区域 -->
+                <div style="margin-top: 20px; text-align: center;">
+                    <h4>裁剪预览</h4>
+                    <canvas id="crop-preview-canvas" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 8px;"></canvas>
+                </div>
             </div>
             <div class="crop-controls">
                 <button class="crop-action-btn reset-btn" onclick="resetCrop()">🔄 重置</button>
@@ -665,7 +762,7 @@
                 <button class="crop-action-btn cancel-btn" onclick="closeCropModal()">✕ 取消</button>
             </div>
             <div style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 0.85rem; color: #6c757d; text-align: center;">
-                <p>拖动蓝色圆点调整裁剪区域，双击重置</p>
+                <p>拖动边框调整裁剪区域，拖动角落缩放，拖动中心移动位置</p>
             </div>
         </div>
     </div>
@@ -724,10 +821,6 @@
     <script src="js/advanced-image-processor.js"></script>
     <script>
         let selectedImages = [];
-        let currentCropIndex = -1;
-        let cropSelection = null;
-        let originalImageData = null;
-        let rotationAngle = 0;
         
         // 扫描增强相关变量
         let advancedProcessor = null;
@@ -847,51 +940,29 @@
         }
         
         // 图片裁剪功能
+        let currentCropIndex = -1;
+        let cropRect = { x: 0, y: 0, width: 0, height: 0 };
+        let isDragging = false;
+        let dragHandle = null;
+        let startPos = { x: 0, y: 0 };
+        let imageRect = null;
+
         function openCropModal(index) {
             currentCropIndex = index;
             const modal = document.getElementById('crop-modal');
-            const canvas = document.getElementById('crop-canvas');
-            const ctx = canvas.getContext('2d');
+            const cropImage = document.getElementById('crop-image');
             
             modal.style.display = 'block';
             
             const reader = new FileReader();
             reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    // 设置画布尺寸
-                    const maxWidth = 600;
-                    const maxHeight = 400;
-                    let { width, height } = img;
-                    
-                    if (width > maxWidth || height > maxHeight) {
-                        const ratio = Math.min(maxWidth / width, maxHeight / height);
-                        width *= ratio;
-                        height *= ratio;
-                    }
-                    
-                    canvas.width = width;
-                    canvas.height = height;
-                    
-                    // 保存原始图片数据
-                    originalImageData = { img, width: img.width, height: img.height };
-                    rotationAngle = 0;
-                    
-                    // 绘制图片
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // 初始化裁剪选区（整个图片）
-                    cropSelection = {
-                        x: 0,
-                        y: 0,
-                        width: width,
-                        height: height
-                    };
-                    
-                    drawCropOverlay();
-                    initCropEvents();
+                cropImage.onload = function() {
+                    setTimeout(() => {
+                        initializeCropArea();
+                        updateCropPreview();
+                    }, 100);
                 };
-                img.src = e.target.result;
+                cropImage.src = e.target.result;
             };
             
             // 读取当前图片
@@ -902,64 +973,323 @@
                 reader.readAsDataURL(imageData.file);
             }
         }
-        
-        function drawCropOverlay() {
-            const canvas = document.getElementById('crop-canvas');
-            const ctx = canvas.getContext('2d');
+
+        function initializeCropArea() {
+            const cropImage = document.getElementById('crop-image');
+            const cropSelection = document.getElementById('crop-selection');
+            const container = document.getElementById('crop-image-container');
             
-            // 清除画布
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            imageRect = cropImage.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
             
-            // 重新绘制图片
-            if (originalImageData) {
-                const { img } = originalImageData;
-                ctx.save();
-                
-                // 应用旋转
-                if (rotationAngle !== 0) {
-                    ctx.translate(canvas.width / 2, canvas.height / 2);
-                    ctx.rotate(rotationAngle * Math.PI / 180);
-                    ctx.translate(-canvas.width / 2, -canvas.height / 2);
-                }
-                
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                ctx.restore();
-            }
+            // 设置初始裁剪区域为图片的80%居中
+            const margin = 0.1; // 10% margin
+            cropRect = {
+                x: imageRect.width * margin,
+                y: imageRect.height * margin,
+                width: imageRect.width * (1 - 2 * margin),
+                height: imageRect.height * (1 - 2 * margin)
+            };
             
-            // 绘制半透明遮罩，排除选中区域
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            updateCropSelection();
+            updateCropMasks();
+            bindCropEvents();
+        }
+
+        function updateCropSelection() {
+            const cropSelection = document.getElementById('crop-selection');
             
-            // 绘制四个遮罩矩形，围绕选中区域
-            // 上方遮罩
-            ctx.fillRect(0, 0, canvas.width, cropSelection.y);
-            // 下方遮罩
-            ctx.fillRect(0, cropSelection.y + cropSelection.height, canvas.width, canvas.height - (cropSelection.y + cropSelection.height));
+            cropSelection.style.left = cropRect.x + 'px';
+            cropSelection.style.top = cropRect.y + 'px';
+            cropSelection.style.width = cropRect.width + 'px';
+            cropSelection.style.height = cropRect.height + 'px';
+        }
+
+        function updateCropMasks() {
+            const cropImage = document.getElementById('crop-image');
+            const imageRect = cropImage.getBoundingClientRect();
+            const container = document.getElementById('crop-image-container');
+            const containerRect = container.getBoundingClientRect();
+            
+            const topMask = document.getElementById('crop-mask-top');
+            const bottomMask = document.getElementById('crop-mask-bottom');
+            const leftMask = document.getElementById('crop-mask-left');
+            const rightMask = document.getElementById('crop-mask-right');
+            
+            // 顶部遮罩
+            topMask.style.left = '0';
+            topMask.style.top = '0';
+            topMask.style.width = '100%';
+            topMask.style.height = cropRect.y + 'px';
+            
+            // 底部遮罩
+            bottomMask.style.left = '0';
+            bottomMask.style.top = (cropRect.y + cropRect.height) + 'px';
+            bottomMask.style.width = '100%';
+            bottomMask.style.height = (imageRect.height - cropRect.y - cropRect.height) + 'px';
+            
             // 左侧遮罩
-            ctx.fillRect(0, cropSelection.y, cropSelection.x, cropSelection.height);
+            leftMask.style.left = '0';
+            leftMask.style.top = cropRect.y + 'px';
+            leftMask.style.width = cropRect.x + 'px';
+            leftMask.style.height = cropRect.height + 'px';
+            
             // 右侧遮罩
-            ctx.fillRect(cropSelection.x + cropSelection.width, cropSelection.y, canvas.width - (cropSelection.x + cropSelection.width), cropSelection.height);
-            
-            // 绘制选区边框 - 使用WPS风格的蓝色边框
-            ctx.strokeStyle = '#1890ff';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height);
-            
-            // 绘制内边框线，增强视觉效果
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(cropSelection.x + 1, cropSelection.y + 1, cropSelection.width - 2, cropSelection.height - 2);
-            
-            // 绘制拖拽点
-            drawResizeHandles();
-            
-            // 绘制辅助网格线
-            drawGridLines();
+            rightMask.style.left = (cropRect.x + cropRect.width) + 'px';
+            rightMask.style.top = cropRect.y + 'px';
+            rightMask.style.width = (imageRect.width - cropRect.x - cropRect.width) + 'px';
+            rightMask.style.height = cropRect.height + 'px';
         }
         
-        function drawResizeHandles() {
-            const canvas = document.getElementById('crop-canvas');
+        function bindCropEvents() {
+            const cropSelection = document.getElementById('crop-selection');
+            const handles = document.querySelectorAll('.crop-handle');
+            
+            // 绑定选择框拖拽事件
+            cropSelection.addEventListener('mousedown', startDrag);
+            
+            // 绑定调整点事件
+            handles.forEach(handle => {
+                handle.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    startResize(e, handle.dataset.handle);
+                });
+            });
+            
+            // 全局鼠标事件
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function startDrag(e) {
+            isDragging = true;
+            dragHandle = 'move';
+            startPos = { x: e.clientX, y: e.clientY };
+        }
+
+        function startResize(e, handle) {
+            isDragging = true;
+            dragHandle = handle;
+            startPos = { x: e.clientX, y: e.clientY };
+        }
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - startPos.x;
+            const deltaY = e.clientY - startPos.y;
+            
+            const cropImage = document.getElementById('crop-image');
+            const imageRect = cropImage.getBoundingClientRect();
+            const container = document.getElementById('crop-image-container');
+            const containerRect = container.getBoundingClientRect();
+            
+            if (dragHandle === 'move') {
+                // 移动整个选择框
+                let newX = cropRect.x + deltaX;
+                let newY = cropRect.y + deltaY;
+                
+                // 边界检测
+                newX = Math.max(0, Math.min(newX, imageRect.width - cropRect.width));
+                newY = Math.max(0, Math.min(newY, imageRect.height - cropRect.height));
+                
+                cropRect.x = newX;
+                cropRect.y = newY;
+            } else {
+                // 调整选择框大小
+                resizeCropRect(deltaX, deltaY, dragHandle);
+            }
+            
+            updateCropSelection();
+            updateCropMasks();
+            updateCropPreview();
+            
+            startPos = { x: e.clientX, y: e.clientY };
+        }
+
+        function resizeCropRect(deltaX, deltaY, handle) {
+            const cropImage = document.getElementById('crop-image');
+            const imageRect = cropImage.getBoundingClientRect();
+            
+            const minSize = 50; // 最小裁剪尺寸
+            
+            switch(handle) {
+                case 'nw':
+                    cropRect.x = Math.max(0, cropRect.x + deltaX);
+                    cropRect.y = Math.max(0, cropRect.y + deltaY);
+                    cropRect.width = Math.max(minSize, cropRect.width - deltaX);
+                    cropRect.height = Math.max(minSize, cropRect.height - deltaY);
+                    break;
+                case 'n':
+                    cropRect.y = Math.max(0, cropRect.y + deltaY);
+                    cropRect.height = Math.max(minSize, cropRect.height - deltaY);
+                    break;
+                case 'ne':
+                    cropRect.y = Math.max(0, cropRect.y + deltaY);
+                    cropRect.width = Math.max(minSize, Math.min(cropRect.width + deltaX, imageRect.width - cropRect.x));
+                    cropRect.height = Math.max(minSize, cropRect.height - deltaY);
+                    break;
+                case 'e':
+                    cropRect.width = Math.max(minSize, Math.min(cropRect.width + deltaX, imageRect.width - cropRect.x));
+                    break;
+                case 'se':
+                    cropRect.width = Math.max(minSize, Math.min(cropRect.width + deltaX, imageRect.width - cropRect.x));
+                    cropRect.height = Math.max(minSize, Math.min(cropRect.height + deltaY, imageRect.height - cropRect.y));
+                    break;
+                case 's':
+                    cropRect.height = Math.max(minSize, Math.min(cropRect.height + deltaY, imageRect.height - cropRect.y));
+                    break;
+                case 'sw':
+                    cropRect.x = Math.max(0, cropRect.x + deltaX);
+                    cropRect.width = Math.max(minSize, cropRect.width - deltaX);
+                    cropRect.height = Math.max(minSize, Math.min(cropRect.height + deltaY, imageRect.height - cropRect.y));
+                    break;
+                case 'w':
+                    cropRect.x = Math.max(0, cropRect.x + deltaX);
+                    cropRect.width = Math.max(minSize, cropRect.width - deltaX);
+                    break;
+            }
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            dragHandle = null;
+        }
+
+        function updateCropPreview() {
+            const previewCanvas = document.getElementById('crop-preview-canvas');
+            const ctx = previewCanvas.getContext('2d');
+            const cropImage = document.getElementById('crop-image');
+            
+            if (!cropImage.complete) return;
+            
+            // 设置预览画布尺寸
+            const maxPreviewSize = 200;
+            const aspectRatio = cropRect.width / cropRect.height;
+            
+            let previewWidth, previewHeight;
+            if (aspectRatio > 1) {
+                previewWidth = Math.min(maxPreviewSize, cropRect.width);
+                previewHeight = previewWidth / aspectRatio;
+            } else {
+                previewHeight = Math.min(maxPreviewSize, cropRect.height);
+                previewWidth = previewHeight * aspectRatio;
+            }
+            
+            previewCanvas.width = previewWidth;
+            previewCanvas.height = previewHeight;
+            
+            // 计算裁剪区域在原图中的比例
+            const scaleX = cropImage.naturalWidth / cropImage.width;
+            const scaleY = cropImage.naturalHeight / cropImage.height;
+            
+            const sourceX = cropRect.x * scaleX;
+            const sourceY = cropRect.y * scaleY;
+            const sourceWidth = cropRect.width * scaleX;
+            const sourceHeight = cropRect.height * scaleY;
+            
+            // 绘制裁剪预览
+            ctx.drawImage(
+                cropImage,
+                sourceX, sourceY, sourceWidth, sourceHeight,
+                0, 0, previewWidth, previewHeight
+            );
+        }
+
+        function resetCrop() {
+            const cropImage = document.getElementById('crop-image');
+            const margin = 0.1;
+            
+            cropRect = {
+                x: cropImage.width * margin,
+                y: cropImage.height * margin,
+                width: cropImage.width * (1 - 2 * margin),
+                height: cropImage.height * (1 - 2 * margin)
+            };
+            
+            updateCropSelection();
+            updateCropMasks();
+            updateCropPreview();
+        }
+
+        function rotateCrop() {
+            // 这个功能需要重新实现图片旋转
+            showNotification('旋转功能开发中...', 'info');
+        }
+
+        function applyCrop() {
+            if (currentCropIndex < 0) return;
+            
+            const cropImage = document.getElementById('crop-image');
+            const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            const handleSize = 24; // 更大的WPS风格拖拽点
+            
+            // 计算实际裁剪区域
+            const scaleX = cropImage.naturalWidth / cropImage.width;
+            const scaleY = cropImage.naturalHeight / cropImage.height;
+            
+            const actualCropRect = {
+                x: cropRect.x * scaleX,
+                y: cropRect.y * scaleY,
+                width: cropRect.width * scaleX,
+                height: cropRect.height * scaleY
+            };
+            
+            canvas.width = actualCropRect.width;
+            canvas.height = actualCropRect.height;
+            
+            // 绘制裁剪后的图片
+            ctx.drawImage(
+                cropImage,
+                actualCropRect.x, actualCropRect.y, actualCropRect.width, actualCropRect.height,
+                0, 0, actualCropRect.width, actualCropRect.height
+            );
+            
+            // 将裁剪结果转换为Blob并保存
+            canvas.toBlob((blob) => {
+                selectedImages[currentCropIndex].croppedData = blob;
+                updatePreview();
+                closeCropModal();
+                showNotification('裁剪完成！', 'success');
+            }, 'image/jpeg', 0.9);
+        }
+
+        function closeCropModal() {
+            document.getElementById('crop-modal').style.display = 'none';
+            currentCropIndex = -1;
+        }
+
+        // 旧的canvas裁剪方法已被删除，现在使用HTML+CSS方法
+        
+        // 文件拖拽处理
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        function handleFileDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const files = Array.from(e.dataTransfer.files).filter(file => 
+                file.type.startsWith('image/')
+            );
+            
+            if (files.length === 0) {
+                showNotification('请拖拽图片文件！', 'error');
+                return;
+            }
+            
+            // 显示拖拽成功提示
+            showNotification('文件拖拽成功！正在处理...', 'info');
+            
+            handleFiles([...files]);
+        }
             
             // 四个角的拖拽点位置
             const handles = [
