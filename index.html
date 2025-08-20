@@ -926,24 +926,18 @@
                 ctx.restore();
             }
             
-            // 绘制半透明遮罩，类似WPS样式
+            // 绘制半透明遮罩，排除选中区域
             ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // 清除选中区域，显示原图
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.fillRect(cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height);
-            
-            // 重新绘制选中区域的原图（确保清晰显示）
-            ctx.globalCompositeOperation = 'source-over';
-            if (originalImageData) {
-                const { img } = originalImageData;
-                ctx.drawImage(
-                    img, 
-                    cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height,
-                    cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height
-                );
-            }
+            // 绘制四个遮罩矩形，围绕选中区域
+            // 上方遮罩
+            ctx.fillRect(0, 0, canvas.width, cropSelection.y);
+            // 下方遮罩
+            ctx.fillRect(0, cropSelection.y + cropSelection.height, canvas.width, canvas.height - (cropSelection.y + cropSelection.height));
+            // 左侧遮罩
+            ctx.fillRect(0, cropSelection.y, cropSelection.x, cropSelection.height);
+            // 右侧遮罩
+            ctx.fillRect(cropSelection.x + cropSelection.width, cropSelection.y, canvas.width - (cropSelection.x + cropSelection.width), cropSelection.height);
             
             // 绘制选区边框 - 使用WPS风格的蓝色边框
             ctx.strokeStyle = '#1890ff';
