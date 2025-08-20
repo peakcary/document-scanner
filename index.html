@@ -598,12 +598,7 @@
             to { transform: scale(1); opacity: 1; }
         }
         
-        /* 新的裁剪界面样式 */
-        .crop-mask {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.5);
-            pointer-events: none;
-        }
+        /* 新的裁剪界面样式 - 使用box-shadow创建遮罩 */
         
         .crop-handle {
             position: absolute;
@@ -718,16 +713,10 @@
                 <div id="crop-image-container" style="position: relative; display: inline-block; max-width: 100%; margin: 0 auto;">
                     <img id="crop-image" style="max-width: 100%; max-height: 60vh; display: block;" />
                     
-                    <!-- 裁剪遮罩和选择框 -->
+                    <!-- 裁剪选择覆盖层 -->
                     <div id="crop-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
-                        <!-- 四个遮罩区域 -->
-                        <div id="crop-mask-top" class="crop-mask"></div>
-                        <div id="crop-mask-bottom" class="crop-mask"></div>
-                        <div id="crop-mask-left" class="crop-mask"></div>
-                        <div id="crop-mask-right" class="crop-mask"></div>
-                        
-                        <!-- 裁剪选择框 -->
-                        <div id="crop-selection" style="position: absolute; border: 2px solid #4299e1; pointer-events: all; cursor: move;">
+                        <!-- 裁剪选择框 - 使用box-shadow创建周围遮罩效果 -->
+                        <div id="crop-selection" style="position: absolute; border: 2px solid #4299e1; pointer-events: all; cursor: move; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);">
                             <!-- 八个调整点 -->
                             <div class="crop-handle crop-handle-nw" data-handle="nw"></div>
                             <div class="crop-handle crop-handle-n" data-handle="n"></div>
@@ -1006,39 +995,8 @@
         }
 
         function updateCropMasks() {
-            const cropImage = document.getElementById('crop-image');
-            const imageRect = cropImage.getBoundingClientRect();
-            const container = document.getElementById('crop-image-container');
-            const containerRect = container.getBoundingClientRect();
-            
-            const topMask = document.getElementById('crop-mask-top');
-            const bottomMask = document.getElementById('crop-mask-bottom');
-            const leftMask = document.getElementById('crop-mask-left');
-            const rightMask = document.getElementById('crop-mask-right');
-            
-            // 顶部遮罩
-            topMask.style.left = '0';
-            topMask.style.top = '0';
-            topMask.style.width = '100%';
-            topMask.style.height = cropRect.y + 'px';
-            
-            // 底部遮罩
-            bottomMask.style.left = '0';
-            bottomMask.style.top = (cropRect.y + cropRect.height) + 'px';
-            bottomMask.style.width = '100%';
-            bottomMask.style.height = (imageRect.height - cropRect.y - cropRect.height) + 'px';
-            
-            // 左侧遮罩
-            leftMask.style.left = '0';
-            leftMask.style.top = cropRect.y + 'px';
-            leftMask.style.width = cropRect.x + 'px';
-            leftMask.style.height = cropRect.height + 'px';
-            
-            // 右侧遮罩
-            rightMask.style.left = (cropRect.x + cropRect.width) + 'px';
-            rightMask.style.top = cropRect.y + 'px';
-            rightMask.style.width = (imageRect.width - cropRect.x - cropRect.width) + 'px';
-            rightMask.style.height = cropRect.height + 'px';
+            // 新的遮罩系统使用CSS box-shadow，不需要手动更新四个遮罩元素
+            // 裁剪选择框的box-shadow会自动创建周围的遮罩效果
         }
         
         function bindCropEvents() {
