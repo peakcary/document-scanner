@@ -41,7 +41,9 @@ deploy-*.tar.gz
 .env
 .env.local
 .env.production
+.env.*.local
 config.local.sh
+deploy.config.local.js
 
 # 服务器配置
 server-config.sh

@@ -4,38 +4,40 @@
  */
 
 module.exports = {
-    // 开发环境
+    // 开发环境 - 从环境变量读取配置
     development: {
-        host: '47.92.236.28',
-        user: 'root',
-        password: 'Pp--9257', // 生产环境建议使用SSH密钥
-        path: '/var/www/document-scanner',
-        port: 22,
-        url: 'http://47.92.236.28:8080',
-        restart: null // 如需重启服务，填写命令
+        host: process.env.DEV_HOST || 'localhost',
+        user: process.env.DEV_USER || 'deploy',
+        password: process.env.DEV_PASSWORD, // 建议使用SSH密钥
+        keyFile: process.env.DEV_KEY_FILE, // SSH私钥文件路径
+        path: process.env.DEV_PATH || '/var/www/document-scanner',
+        port: parseInt(process.env.DEV_PORT) || 22,
+        url: process.env.DEV_URL || 'http://localhost:8080',
+        restart: process.env.DEV_RESTART_CMD // 如需重启服务，填写命令
     },
     
-    // 生产环境模板
+    // 生产环境 - 从环境变量读取配置
     production: {
-        host: 'your-production-server.com',
-        user: 'deploy',
-        // password: 'your-password', // 不推荐在生产环境使用密码
-        keyFile: '~/.ssh/id_rsa', // 推荐使用SSH密钥
-        path: '/var/www/document-scanner',
-        port: 22,
-        url: 'https://your-domain.com',
-        restart: 'systemctl restart nginx' // 重启Web服务器
+        host: process.env.PROD_HOST || 'your-production-server.com',
+        user: process.env.PROD_USER || 'deploy',
+        password: process.env.PROD_PASSWORD,
+        keyFile: process.env.PROD_KEY_FILE || '~/.ssh/id_rsa',
+        path: process.env.PROD_PATH || '/var/www/document-scanner',
+        port: parseInt(process.env.PROD_PORT) || 22,
+        url: process.env.PROD_URL || 'https://your-domain.com',
+        restart: process.env.PROD_RESTART_CMD || 'systemctl restart nginx'
     },
     
-    // 测试环境
+    // 测试环境 - 从环境变量读取配置
     staging: {
-        host: 'staging-server.com',
-        user: 'staging',
-        password: 'staging-password',
-        path: '/var/www/staging/document-scanner',
-        port: 22,
-        url: 'http://staging-server.com:8080',
-        restart: null
+        host: process.env.STAGING_HOST || 'staging-server.com',
+        user: process.env.STAGING_USER || 'staging',
+        password: process.env.STAGING_PASSWORD,
+        keyFile: process.env.STAGING_KEY_FILE,
+        path: process.env.STAGING_PATH || '/var/www/staging/document-scanner',
+        port: parseInt(process.env.STAGING_PORT) || 22,
+        url: process.env.STAGING_URL || 'http://staging-server.com:8080',
+        restart: process.env.STAGING_RESTART_CMD
     }
 };
 

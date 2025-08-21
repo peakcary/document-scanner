@@ -9,6 +9,25 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+// 加载环境变量
+function loadEnvFile(filename) {
+    if (fs.existsSync(filename)) {
+        const envConfig = fs.readFileSync(filename, 'utf8');
+        envConfig.split('\n').forEach(line => {
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+                const [key, ...values] = trimmed.split('=');
+                process.env[key] = values.join('=');
+            }
+        });
+        console.log(`✓ 已加载环境配置: ${filename}`);
+    }
+}
+
+// 按优先级加载环境变量文件
+loadEnvFile('.env.local');  // 本地配置 (最高优先级)
+loadEnvFile('.env');        // 通用配置
+
 // 加载配置文件
 let config = {};
 const configFile = 'deploy.config.js';
