@@ -4,11 +4,14 @@
   "description": "高级文档扫描器 - 将照片转换为高质量PDF扫描件",
   "main": "index.html",
   "scripts": {
-    "start": "python3 -m http.server 8000",
-    "build": "echo 'Static site - no build required'",
-    "deploy": "chmod +x deploy.sh && ./deploy.sh",
-    "test": "echo 'No tests specified'",
-    "lint": "echo 'No linting configured'"
+    "start": "python3 -m http.server 8080",
+    "dev": "python3 -m http.server 8080",
+    "build": "node scripts/build.js",
+    "package": "node scripts/package.js",
+    "deploy": "node scripts/deploy.js",
+    "deploy:prod": "NODE_ENV=production node scripts/deploy.js",
+    "clean": "rm -rf dist/ deploy-*.tar.gz",
+    "version": "node scripts/version.js"
   },
   "keywords": [
     "document-scanner",

@@ -23,9 +23,16 @@ node_modules/
 **/.DS_Store
 **/._.DS_Store
 
-# 压缩文件
+# 构建输出
+dist/
+build/
+
+# 压缩文件和部署包
 *.tar.gz
 *.zip
+document-scanner-v*.tar.gz
+document-scanner-latest.tar.gz
+deploy-*.tar.gz
 
 # 运行时文件
 *.pid

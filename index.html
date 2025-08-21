@@ -277,7 +277,9 @@
             width: 90%;
             max-width: 800px;
             max-height: 90vh;
-            overflow: auto;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
         }
         .modal-header {
             display: flex;
@@ -305,6 +307,9 @@
         .crop-container {
             text-align: center;
             margin: 20px 0;
+            flex: 1;
+            overflow: auto;
+            max-height: calc(90vh - 100px); /* 移除说明文字后，图片区域更大 */
         }
         .crop-preview {
             max-width: 100%;
@@ -312,33 +317,75 @@
             border: 2px solid #e2e8f0;
             border-radius: 10px;
         }
+        /* 确保按钮可见 */
         .crop-controls {
-            margin: 20px 0;
+            margin: 30px 0 15px 0; /* 增加上边距，让按钮更靠下 */
             display: flex;
-            flex-wrap: wrap;
             gap: 12px;
             justify-content: center;
-        }
-        
-        /* 裁剪操作按钮样式 */
-        .crop-action-btn {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 8px;
-            padding: 10px 16px;
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .crop-action-btn {
+            background: #ffffff;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            padding: 10px 20px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-weight: 500;
-            transition: all 0.3s ease;
-            min-width: 70px;
+            transition: all 0.2s ease;
+            min-width: 80px;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            color: #2d3748;
         }
-        .reset-btn:hover {
-            background: #e9ecef;
-            border-color: #adb5bd;
+
+        .crop-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
-        .rotate-btn:hover {
-            background: #e9ecef;
-            border-color: #adb5bd;
+
+        .crop-action-btn:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .apply-btn {
+            background: #48bb78 !important;
+            border-color: #48bb78 !important;
+            color: white !important;
+        }
+
+        .cancel-btn {
+            background: #f56565 !important;
+            border-color: #f56565 !important;
+            color: white !important;
+        }
+
+
+        /* 移动端按钮优化 */
+        @media (hover: none) and (pointer: coarse) {
+            .crop-action-btn {
+                padding: 12px 24px;
+                font-size: 1.1rem;
+                min-width: 90px;
+                min-height: 44px;
+                border-width: 2px;
+            }
+
+            .crop-controls {
+                padding: 15px;
+                gap: 15px;
+            }
         }
         .apply-btn {
             background: #28a745;
@@ -525,9 +572,15 @@
                 margin: 2% auto;
                 padding: 15px;
                 border-radius: 10px;
+                max-height: 95vh;
             }
             .crop-container {
                 margin: 15px 0;
+                max-height: calc(95vh - 80px); /* 移动端移除说明后更大图片区域 */
+            }
+            .crop-controls {
+                margin: 20px 0 10px 0; /* 移动端也增加上边距 */
+                padding: 10px;
             }
             .scan-styles {
                 grid-template-columns: repeat(2, 1fr);
@@ -600,32 +653,84 @@
         
         /* 新的裁剪界面样式 - 使用box-shadow创建遮罩 */
         
+        /* 修复后的裁剪拖拽点样式 */
         .crop-handle {
             position: absolute;
-            width: 12px;
-            height: 12px;
+            width: 24px;
+            height: 24px;
             background: #4299e1;
-            border: 2px solid white;
+            border: 3px solid white;
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            transform: translate(-50%, -50%);
-            transition: all 0.2s ease;
+            z-index: 10;
+            /* 重要：使用transform而不是top/left偏移 */
+            transform-origin: center;
         }
-        
+
         .crop-handle:hover {
             background: #3182ce;
-            transform: translate(-50%, -50%) scale(1.2);
+            transform: scale(1.1);
         }
-        
-        .crop-handle-nw { top: 0; left: 0; cursor: nw-resize; }
-        .crop-handle-n { top: 0; left: 50%; cursor: n-resize; }
-        .crop-handle-ne { top: 0; right: 0; cursor: ne-resize; }
-        .crop-handle-e { top: 50%; right: 0; cursor: e-resize; }
-        .crop-handle-se { bottom: 0; right: 0; cursor: se-resize; }
-        .crop-handle-s { bottom: 0; left: 50%; cursor: s-resize; }
-        .crop-handle-sw { bottom: 0; left: 0; cursor: sw-resize; }
-        .crop-handle-w { top: 50%; left: 0; cursor: w-resize; }
+
+        /* 精确的位置定义 */
+        .crop-handle-nw { 
+            top: 0; 
+            left: 0; 
+            cursor: nw-resize; 
+            transform: translate(-50%, -50%);
+        }
+        .crop-handle-n { 
+            top: 0; 
+            left: 50%; 
+            cursor: n-resize; 
+            transform: translate(-50%, -50%);
+        }
+        .crop-handle-ne { 
+            top: 0; 
+            right: 0; 
+            cursor: ne-resize; 
+            transform: translate(50%, -50%);
+        }
+        .crop-handle-e { 
+            top: 50%; 
+            right: 0; 
+            cursor: e-resize; 
+            transform: translate(50%, -50%);
+        }
+        .crop-handle-se { 
+            bottom: 0; 
+            right: 0; 
+            cursor: se-resize; 
+            transform: translate(50%, 50%);
+        }
+        .crop-handle-s { 
+            bottom: 0; 
+            left: 50%; 
+            cursor: s-resize; 
+            transform: translate(-50%, 50%);
+        }
+        .crop-handle-sw { 
+            bottom: 0; 
+            left: 0; 
+            cursor: sw-resize; 
+            transform: translate(-50%, 50%);
+        }
+        .crop-handle-w { 
+            top: 50%; 
+            left: 0; 
+            cursor: w-resize; 
+            transform: translate(-50%, -50%);
+        }
+
+        /* 移动端更大的拖拽点 */
+        @media (hover: none) and (pointer: coarse) {
+            .crop-handle {
+                width: 32px;
+                height: 32px;
+                border: 4px solid white;
+            }
+        }
         
         .crop-grid {
             position: absolute;
@@ -745,13 +850,8 @@
                 </div>
             </div>
             <div class="crop-controls">
-                <button class="crop-action-btn reset-btn" onclick="resetCrop()">🔄 重置</button>
-                <button class="crop-action-btn rotate-btn" onclick="rotateCrop()">↻ 旋转</button>
                 <button class="crop-action-btn apply-btn" onclick="applyCrop()">✓ 确定</button>
                 <button class="crop-action-btn cancel-btn" onclick="closeCropModal()">✕ 取消</button>
-            </div>
-            <div style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 0.85rem; color: #6c757d; text-align: center;">
-                <p>拖动边框调整裁剪区域，拖动角落缩放，拖动中心移动位置</p>
             </div>
         </div>
     </div>
@@ -851,10 +951,14 @@
             const sourceText = source === 'camera' ? '拍照' : '上传';
             showNotification(`${sourceText}成功，共 ${validFiles.length} 张图片`, 'success');
             
-            // 自动打开第一张图片的裁剪界面
+            // 立即显示预览区域
+            const previewSection = document.getElementById('preview-section');
+            previewSection.style.display = 'block';
+            
+            // 短暂延迟后自动打开第一张图片的裁剪界面
             setTimeout(() => {
                 openCropModal(startIndex);
-            }, 300);
+            }, 500);
         }
         
         function updatePreview() {
@@ -968,11 +1072,24 @@
             const cropSelection = document.getElementById('crop-selection');
             const container = document.getElementById('crop-image-container');
             
-            imageRect = cropImage.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
+            // 确保图片完全加载
+            if (!cropImage.complete || cropImage.naturalWidth === 0) {
+                setTimeout(initializeCropArea, 100);
+                return;
+            }
+            
+            // 修复：使用相对于容器的坐标系统
+            imageRect = {
+                width: cropImage.offsetWidth,  // 使用offsetWidth而不是getBoundingClientRect
+                height: cropImage.offsetHeight,
+                left: 0,  // 相对于容器的位置
+                top: 0
+            };
+            
+            console.log('Fixed Image rect:', imageRect);
             
             // 设置初始裁剪区域为图片的80%居中
-            const margin = 0.1; // 10% margin
+            const margin = 0.1;
             cropRect = {
                 x: imageRect.width * margin,
                 y: imageRect.height * margin,
@@ -980,8 +1097,10 @@
                 height: imageRect.height * (1 - 2 * margin)
             };
             
+            console.log('Fixed Crop rect:', cropRect);
+            
             updateCropSelection();
-            updateCropMasks();
+            updateCropPreview();
             bindCropEvents();
         }
 
@@ -1003,44 +1122,114 @@
             const cropSelection = document.getElementById('crop-selection');
             const handles = document.querySelectorAll('.crop-handle');
             
+            console.log('Binding events to', handles.length, 'handles');
+            
+            // 清除之前的事件监听器
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', stopDrag);
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', stopDrag);
+            
+            // 统一事件处理函数
+            function addUniversalEvents(element, startCallback) {
+                // 移除旧的事件监听器
+                element.onmousedown = null;
+                element.ontouchstart = null;
+                
+                // 鼠标事件
+                element.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    startCallback(e);
+                });
+                
+                // 触摸事件
+                element.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY,
+                        preventDefault: () => e.preventDefault(),
+                        stopPropagation: () => e.stopPropagation()
+                    };
+                    startCallback(mouseEvent);
+                }, { passive: false });
+            }
+            
             // 绑定选择框拖拽事件
-            cropSelection.addEventListener('mousedown', startDrag);
+            addUniversalEvents(cropSelection, startDrag);
             
             // 绑定调整点事件
             handles.forEach(handle => {
-                handle.addEventListener('mousedown', (e) => {
+                addUniversalEvents(handle, (e) => {
                     e.stopPropagation();
                     startResize(e, handle.dataset.handle);
                 });
             });
             
-            // 全局鼠标事件
+            // 全局事件监听器
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchmove', onTouchMove, { passive: false });
+            document.addEventListener('touchend', stopDrag, { passive: false });
+            document.addEventListener('touchcancel', stopDrag, { passive: false });
+        }
+
+        // 添加触摸移动处理函数
+        function onTouchMove(e) {
+            e.preventDefault();
+            if (!isDragging) return;
+            
+            const touch = e.touches[0];
+            const mouseEvent = {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            };
+            onMouseMove(mouseEvent);
         }
 
         function startDrag(e) {
             isDragging = true;
             dragHandle = 'move';
-            startPos = { x: e.clientX, y: e.clientY };
+            
+            const container = document.getElementById('crop-image-container');
+            const containerRect = container.getBoundingClientRect();
+            
+            startPos = { 
+                x: e.clientX - containerRect.left, 
+                y: e.clientY - containerRect.top 
+            };
+            
+            console.log('Start drag at:', startPos);
         }
 
         function startResize(e, handle) {
             isDragging = true;
             dragHandle = handle;
-            startPos = { x: e.clientX, y: e.clientY };
+            
+            const container = document.getElementById('crop-image-container');
+            const containerRect = container.getBoundingClientRect();
+            
+            startPos = { 
+                x: e.clientX - containerRect.left, 
+                y: e.clientY - containerRect.top 
+            };
+            
+            console.log('Start resize:', handle, 'at:', startPos);
         }
 
         function onMouseMove(e) {
             if (!isDragging) return;
             
-            const deltaX = e.clientX - startPos.x;
-            const deltaY = e.clientY - startPos.y;
-            
-            const cropImage = document.getElementById('crop-image');
-            const imageRect = cropImage.getBoundingClientRect();
             const container = document.getElementById('crop-image-container');
             const containerRect = container.getBoundingClientRect();
+            
+            // 转换为相对于容器的坐标
+            const containerX = e.clientX - containerRect.left;
+            const containerY = e.clientY - containerRect.top;
+            
+            const deltaX = containerX - startPos.x;
+            const deltaY = containerY - startPos.y;
             
             if (dragHandle === 'move') {
                 // 移动整个选择框
@@ -1059,17 +1248,17 @@
             }
             
             updateCropSelection();
-            updateCropMasks();
             updateCropPreview();
             
-            startPos = { x: e.clientX, y: e.clientY };
+            startPos = { x: containerX, y: containerY };
         }
 
         function resizeCropRect(deltaX, deltaY, handle) {
-            const cropImage = document.getElementById('crop-image');
-            const imageRect = cropImage.getBoundingClientRect();
-            
             const minSize = 50; // 最小裁剪尺寸
+            
+            // 使用存储的imageRect进行边界检测
+            const maxWidth = imageRect.width;
+            const maxHeight = imageRect.height;
             
             switch(handle) {
                 case 'nw':
@@ -1084,23 +1273,23 @@
                     break;
                 case 'ne':
                     cropRect.y = Math.max(0, cropRect.y + deltaY);
-                    cropRect.width = Math.max(minSize, Math.min(cropRect.width + deltaX, imageRect.width - cropRect.x));
+                    cropRect.width = Math.max(minSize, Math.min(cropRect.width + deltaX, maxWidth - cropRect.x));
                     cropRect.height = Math.max(minSize, cropRect.height - deltaY);
                     break;
                 case 'e':
-                    cropRect.width = Math.max(minSize, Math.min(cropRect.width + deltaX, imageRect.width - cropRect.x));
+                    cropRect.width = Math.max(minSize, Math.min(cropRect.width + deltaX, maxWidth - cropRect.x));
                     break;
                 case 'se':
-                    cropRect.width = Math.max(minSize, Math.min(cropRect.width + deltaX, imageRect.width - cropRect.x));
-                    cropRect.height = Math.max(minSize, Math.min(cropRect.height + deltaY, imageRect.height - cropRect.y));
+                    cropRect.width = Math.max(minSize, Math.min(cropRect.width + deltaX, maxWidth - cropRect.x));
+                    cropRect.height = Math.max(minSize, Math.min(cropRect.height + deltaY, maxHeight - cropRect.y));
                     break;
                 case 's':
-                    cropRect.height = Math.max(minSize, Math.min(cropRect.height + deltaY, imageRect.height - cropRect.y));
+                    cropRect.height = Math.max(minSize, Math.min(cropRect.height + deltaY, maxHeight - cropRect.y));
                     break;
                 case 'sw':
                     cropRect.x = Math.max(0, cropRect.x + deltaX);
                     cropRect.width = Math.max(minSize, cropRect.width - deltaX);
-                    cropRect.height = Math.max(minSize, Math.min(cropRect.height + deltaY, imageRect.height - cropRect.y));
+                    cropRect.height = Math.max(minSize, Math.min(cropRect.height + deltaY, maxHeight - cropRect.y));
                     break;
                 case 'w':
                     cropRect.x = Math.max(0, cropRect.x + deltaX);
@@ -1112,6 +1301,7 @@
         function stopDrag() {
             isDragging = false;
             dragHandle = null;
+            console.log('Stop drag');
         }
 
         function updateCropPreview() {
@@ -1242,553 +1432,6 @@
                 showNotification('请拖拽图片文件！', 'error');
                 return;
             }
-            
-            // 显示拖拽成功提示
-            showNotification('文件拖拽成功！正在处理...', 'info');
-            
-            handleFiles([...files]);
-        }
-            
-            // 四个角的拖拽点位置
-            const handles = [
-                { x: cropSelection.x, y: cropSelection.y, position: 'tl' },
-                { x: cropSelection.x + cropSelection.width, y: cropSelection.y, position: 'tr' },
-                { x: cropSelection.x, y: cropSelection.y + cropSelection.height, position: 'bl' },
-                { x: cropSelection.x + cropSelection.width, y: cropSelection.y + cropSelection.height, position: 'br' }
-            ];
-            
-            handles.forEach(handle => {
-                // 绘制WPS风格的圆形拖拽点 - 带阴影效果
-                ctx.save();
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
-                ctx.shadowBlur = 6;
-                ctx.shadowOffsetX = 2;
-                ctx.shadowOffsetY = 2;
-                
-                // 外圈 - 白色边框
-                ctx.fillStyle = '#ffffff';
-                ctx.strokeStyle = '#1890ff';
-                ctx.lineWidth = 4;
-                
-                ctx.beginPath();
-                ctx.arc(handle.x, handle.y, handleSize/2, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.stroke();
-                
-                ctx.restore();
-                
-                // 内圈 - 蓝色填充
-                ctx.fillStyle = '#1890ff';
-                ctx.beginPath();
-                ctx.arc(handle.x, handle.y, (handleSize/2) - 5, 0, 2 * Math.PI);
-                ctx.fill();
-                
-                // 中心点 - 白色小点，增强视觉效果
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.arc(handle.x, handle.y, 2, 0, 2 * Math.PI);
-                ctx.fill();
-            });
-            
-            // 保存拖拽点信息，用于检测拖拽
-            window.resizeHandles = handles.map(handle => ({
-                ...handle,
-                radius: handleSize / 2
-            }));
-        }
-        
-        // 添加辅助网格线功能
-        function drawGridLines() {
-            const canvas = document.getElementById('crop-canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // WPS风格的辅助网格线
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([4, 4]);
-            
-            // 绘制三分线网格（黄金分割线）
-            const x1 = cropSelection.x + cropSelection.width / 3;
-            const x2 = cropSelection.x + (cropSelection.width * 2) / 3;
-            const y1 = cropSelection.y + cropSelection.height / 3;
-            const y2 = cropSelection.y + (cropSelection.height * 2) / 3;
-            
-            // 垂直分割线
-            ctx.beginPath();
-            ctx.moveTo(x1, cropSelection.y + 3);
-            ctx.lineTo(x1, cropSelection.y + cropSelection.height - 3);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(x2, cropSelection.y + 3);
-            ctx.lineTo(x2, cropSelection.y + cropSelection.height - 3);
-            ctx.stroke();
-            
-            // 水平分割线
-            ctx.beginPath();
-            ctx.moveTo(cropSelection.x + 3, y1);
-            ctx.lineTo(cropSelection.x + cropSelection.width - 3, y1);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(cropSelection.x + 3, y2);
-            ctx.lineTo(cropSelection.x + cropSelection.width - 3, y2);
-            ctx.stroke();
-            
-            // 中心十字线（更细更明显）
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.setLineDash([6, 3]);
-            
-            const centerX = cropSelection.x + cropSelection.width / 2;
-            const centerY = cropSelection.y + cropSelection.height / 2;
-            
-            // 中心垂直线
-            ctx.beginPath();
-            ctx.moveTo(centerX, cropSelection.y + 8);
-            ctx.lineTo(centerX, cropSelection.y + cropSelection.height - 8);
-            ctx.stroke();
-            
-            // 中心水平线
-            ctx.beginPath();
-            ctx.moveTo(cropSelection.x + 8, centerY);
-            ctx.lineTo(cropSelection.x + cropSelection.width - 8, centerY);
-            ctx.stroke();
-            
-            // 重置虚线样式
-            ctx.setLineDash([]);
-        }
-        
-        function initCropEvents() {
-            const canvas = document.getElementById('crop-canvas');
-            let isDragging = false;
-            let isResizing = false;
-            let dragStart = { x: 0, y: 0 };
-            let resizeCorner = null;
-            
-            // 获取触摸或鼠标坐标的统一函数
-            function getEventPos(e) {
-                const rect = canvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                return {
-                    x: clientX - rect.left,
-                    y: clientY - rect.top
-                };
-            }
-            
-            // 统一的开始事件处理
-            function handleStart(e) {
-                e.preventDefault(); // 防止默认行为
-                const pos = getEventPos(e);
-                
-                // 检查是否点击在拖拽点上（WPS风格的圆形拖拽点）
-                const handleRadius = 15; // 触摸检测半径
-                const handles = [
-                    { x: cropSelection.x, y: cropSelection.y, corner: 'tl' },
-                    { x: cropSelection.x + cropSelection.width, y: cropSelection.y, corner: 'tr' },
-                    { x: cropSelection.x, y: cropSelection.y + cropSelection.height, corner: 'bl' },
-                    { x: cropSelection.x + cropSelection.width, y: cropSelection.y + cropSelection.height, corner: 'br' }
-                ];
-                
-                for (let handle of handles) {
-                    const distance = Math.sqrt(Math.pow(pos.x - handle.x, 2) + Math.pow(pos.y - handle.y, 2));
-                    if (distance <= handleRadius) {
-                        isResizing = true;
-                        resizeCorner = handle.corner;
-                        dragStart = { x: pos.x, y: pos.y };
-                        return;
-                    }
-                }
-                
-                // 检查是否点击在选区内
-                if (pos.x >= cropSelection.x && pos.x <= cropSelection.x + cropSelection.width &&
-                    pos.y >= cropSelection.y && pos.y <= cropSelection.y + cropSelection.height) {
-                    isDragging = true;
-                    dragStart = { x: pos.x - cropSelection.x, y: pos.y - cropSelection.y };
-                }
-            }
-            
-            // 统一的移动事件处理
-            function handleMove(e) {
-                if (!isDragging && !isResizing) return;
-                
-                e.preventDefault();
-                const pos = getEventPos(e);
-                
-                if (isResizing && resizeCorner) {
-                    // 调整选区大小
-                    const dx = pos.x - dragStart.x;
-                    const dy = pos.y - dragStart.y;
-                    
-                    switch (resizeCorner) {
-                        case 'tl':
-                            cropSelection.x += dx;
-                            cropSelection.y += dy;
-                            cropSelection.width -= dx;
-                            cropSelection.height -= dy;
-                            break;
-                        case 'tr':
-                            cropSelection.y += dy;
-                            cropSelection.width += dx;
-                            cropSelection.height -= dy;
-                            break;
-                        case 'bl':
-                            cropSelection.x += dx;
-                            cropSelection.width -= dx;
-                            cropSelection.height += dy;
-                            break;
-                        case 'br':
-                            cropSelection.width += dx;
-                            cropSelection.height += dy;
-                            break;
-                    }
-                    
-                    // 限制边界
-                    cropSelection.x = Math.max(0, cropSelection.x);
-                    cropSelection.y = Math.max(0, cropSelection.y);
-                    cropSelection.width = Math.max(20, Math.min(cropSelection.width, canvas.width - cropSelection.x));
-                    cropSelection.height = Math.max(20, Math.min(cropSelection.height, canvas.height - cropSelection.y));
-                    
-                    dragStart = { x: pos.x, y: pos.y };
-                    drawCropOverlay();
-                } else if (isDragging) {
-                    // 移动选区
-                    cropSelection.x = Math.max(0, Math.min(pos.x - dragStart.x, canvas.width - cropSelection.width));
-                    cropSelection.y = Math.max(0, Math.min(pos.y - dragStart.y, canvas.height - cropSelection.height));
-                    drawCropOverlay();
-                }
-            }
-            
-            // 统一的结束事件处理
-            function handleEnd(e) {
-                e.preventDefault();
-                isDragging = false;
-                isResizing = false;
-                resizeCorner = null;
-            }
-            
-            // 鼠标事件
-            canvas.addEventListener('mousedown', handleStart);
-            canvas.addEventListener('mousemove', handleMove);
-            canvas.addEventListener('mouseup', handleEnd);
-            canvas.addEventListener('mouseleave', handleEnd);
-            
-            // 触摸事件
-            canvas.addEventListener('touchstart', handleStart, { passive: false });
-            canvas.addEventListener('touchmove', handleMove, { passive: false });
-            canvas.addEventListener('touchend', handleEnd, { passive: false });
-            canvas.addEventListener('touchcancel', handleEnd, { passive: false });
-            
-            // 双击/双触重置选区
-            canvas.addEventListener('dblclick', function() {
-                cropSelection = {
-                    x: 0,
-                    y: 0,
-                    width: canvas.width,
-                    height: canvas.height
-                };
-                drawCropOverlay();
-            });
-            
-            // 双触重置（移动端）
-            let lastTap = 0;
-            canvas.addEventListener('touchend', function(e) {
-                const currentTime = new Date().getTime();
-                const tapLength = currentTime - lastTap;
-                if (tapLength < 500 && tapLength > 0) {
-                    e.preventDefault();
-                    cropSelection = {
-                        x: 0,
-                        y: 0,
-                        width: canvas.width,
-                        height: canvas.height
-                    };
-                    drawCropOverlay();
-                }
-                lastTap = currentTime;
-            });
-        }
-        
-        function resetCrop() {
-            const canvas = document.getElementById('crop-canvas');
-            cropSelection = {
-                x: 0,
-                y: 0,
-                width: canvas.width,
-                height: canvas.height
-            };
-            rotationAngle = 0;
-            drawCropOverlay();
-        }
-        
-        function rotateCrop() {
-            rotationAngle = (rotationAngle + 90) % 360;
-            drawCropOverlay();
-        }
-        
-        function applyCrop() {
-            if (currentCropIndex < 0) return;
-            
-            const canvas = document.getElementById('crop-canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // 创建新的画布用于裁剪
-            const cropCanvas = document.createElement('canvas');
-            const cropCtx = cropCanvas.getContext('2d');
-            
-            // 计算实际裁剪比例
-            const scaleX = originalImageData.width / canvas.width;
-            const scaleY = originalImageData.height / canvas.height;
-            
-            const actualCrop = {
-                x: cropSelection.x * scaleX,
-                y: cropSelection.y * scaleY,
-                width: cropSelection.width * scaleX,
-                height: cropSelection.height * scaleY
-            };
-            
-            cropCanvas.width = actualCrop.width;
-            cropCanvas.height = actualCrop.height;
-            
-            // 绘制裁剪后的图片
-            cropCtx.drawImage(
-                originalImageData.img,
-                actualCrop.x, actualCrop.y, actualCrop.width, actualCrop.height,
-                0, 0, actualCrop.width, actualCrop.height
-            );
-            
-            // 转换为blob并保存
-            cropCanvas.toBlob(function(blob) {
-                selectedImages[currentCropIndex].croppedData = blob;
-                selectedImages[currentCropIndex].processed = true;
-                updatePreview();
-                closeCropModal();
-                showNotification('图片裁剪完成', 'success');
-                
-                // 裁剪完成后询问是否进行扫描增强
-                const finishedIndex = currentCropIndex; // 保存当前索引
-                setTimeout(() => {
-                    if (confirm('裁剪完成！是否立即对此图片进行扫描增强？\n\n扫描增强可以提升图片质量，更适合文档扫描。')) {
-                        openScanModal(finishedIndex);
-                    }
-                }, 800);
-            }, 'image/jpeg', 0.9);
-        }
-        
-        function closeCropModal() {
-            document.getElementById('crop-modal').style.display = 'none';
-            currentCropIndex = -1;
-        }
-        
-        async function generatePDF() {
-            if (selectedImages.length === 0) {
-                showNotification('请先选择图片！', 'error');
-                return;
-            }
-            
-            const processingSection = document.getElementById('processing-section');
-            const generateBtn = document.getElementById('generate-pdf-btn');
-            const progressFill = document.getElementById('progress-fill');
-            const progressText = document.getElementById('progress-text');
-            const statusText = document.getElementById('processing-status');
-            
-            // 显示处理界面
-            processingSection.style.display = 'block';
-            generateBtn.disabled = true;
-            
-            try {
-                // 创建PDF文档
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
-                
-                // A4纸张尺寸 (210 x 297 mm)
-                const pageWidth = 210;
-                const pageHeight = 297;
-                const margin = 10;
-                const contentWidth = pageWidth - 2 * margin;
-                const contentHeight = pageHeight - 2 * margin;
-                
-                for (let i = 0; i < selectedImages.length; i++) {
-                    const progress = ((i + 1) / selectedImages.length) * 100;
-                    statusText.textContent = `处理第 ${i + 1}/${selectedImages.length} 张图片...`;
-                    progressFill.style.width = `${progress}%`;
-                    progressText.textContent = `${Math.round(progress)}%`;
-                    
-                    // 等待一帧以更新UI
-                    await new Promise(resolve => requestAnimationFrame(resolve));
-                    
-                    if (i > 0) {
-                        pdf.addPage();
-                    }
-                    
-                    // 读取图片（使用裁剪后的数据或原始文件）
-                    const imageData = selectedImages[i];
-                    const imageDataUrl = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result);
-                        if (imageData.croppedData) {
-                            reader.readAsDataURL(imageData.croppedData);
-                        } else {
-                            reader.readAsDataURL(imageData.file);
-                        }
-                    });
-                    
-                    // 创建图片对象获取尺寸
-                    const img = await new Promise((resolve, reject) => {
-                        const image = new Image();
-                        image.onload = () => resolve(image);
-                        image.onerror = reject;
-                        image.src = imageDataUrl;
-                    });
-                    
-                    // 计算图片在页面中的尺寸，保持宽高比
-                    let imgWidth = contentWidth;
-                    let imgHeight = (img.height / img.width) * contentWidth;
-                    
-                    // 如果高度超出页面，按高度缩放
-                    if (imgHeight > contentHeight) {
-                        imgHeight = contentHeight;
-                        imgWidth = (img.width / img.height) * contentHeight;
-                    }
-                    
-                    // 居中放置
-                    const x = margin + (contentWidth - imgWidth) / 2;
-                    const y = margin + (contentHeight - imgHeight) / 2;
-                    
-                    // 添加图片到PDF
-                    pdf.addImage(imageDataUrl, 'JPEG', x, y, imgWidth, imgHeight);
-                }
-                
-                // 完成处理
-                statusText.textContent = '正在生成PDF文件...';
-                progressFill.style.width = '100%';
-                progressText.textContent = '100%';
-                
-                // 生成文件名
-                const now = new Date();
-                const fileName = `智能扫描_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}.pdf`;
-                
-                // 下载PDF
-                pdf.save(fileName);
-                
-                // 显示成功信息
-                statusText.textContent = '✅ PDF生成完成！';
-                setTimeout(() => {
-                    processingSection.style.display = 'none';
-                    generateBtn.disabled = false;
-                    progressFill.style.width = '0%';
-                    progressText.textContent = '0%';
-                }, 2000);
-                
-                showNotification(`PDF生成成功！文件名：${fileName}`, 'success');
-                
-            } catch (error) {
-                console.error('PDF生成失败:', error);
-                statusText.textContent = '❌ 生成失败';
-                showNotification('PDF生成失败，请重试！', 'error');
-                
-                processingSection.style.display = 'none';
-                generateBtn.disabled = false;
-                progressFill.style.width = '0%';
-                progressText.textContent = '0%';
-            }
-        }
-        
-        // 通知系统
-        function showNotification(message, type = 'info') {
-            // 创建通知元素
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                border-radius: 10px;
-                color: white;
-                font-weight: 600;
-                z-index: 10000;
-                animation: slideIn 0.3s ease-out;
-                max-width: 300px;
-                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            `;
-            
-            // 根据类型设置颜色
-            const colors = {
-                success: '#48bb78',
-                error: '#f56565',
-                warning: '#ed8936',
-                info: '#4299e1'
-            };
-            
-            notification.style.background = colors[type] || colors.info;
-            notification.textContent = message;
-            
-            // 添加动画样式
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes slideIn {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                @keyframes slideOut {
-                    from { transform: translateX(0); opacity: 1; }
-                    to { transform: translateX(100%); opacity: 0; }
-                }
-            `;
-            document.head.appendChild(style);
-            
-            document.body.appendChild(notification);
-            
-            // 3秒后自动移除
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease-in';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
-        }
-        
-        
-        // 拖拽上传支持
-        const uploadArea = document.getElementById('upload-area');
-        
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, preventDefaults, false);
-            document.body.addEventListener(eventName, preventDefaults, false);
-        });
-        
-        ['dragenter', 'dragover'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, highlight, false);
-        });
-        
-        ['dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, unhighlight, false);
-        });
-        
-        uploadArea.addEventListener('drop', handleDrop, false);
-        
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        
-        function highlight(e) {
-            uploadArea.classList.add('drag-over');
-        }
-        
-        function unhighlight(e) {
-            uploadArea.classList.remove('drag-over');
-        }
-        
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
             
             // 显示拖拽成功提示
             showNotification('文件拖拽成功！正在处理...', 'info');
@@ -1956,6 +1599,49 @@
             }
         }
         
+        // 通知功能
+        function showNotification(message, type = 'info') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                background: ${type === 'success' ? '#48bb78' : type === 'error' ? '#f56565' : '#4299e1'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 9999;
+                font-size: 0.9rem;
+                font-weight: 500;
+                max-width: 300px;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // 显示动画
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+            }, 10);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
         // 页面加载完成后的初始化
         document.addEventListener('DOMContentLoaded', function() {
             showNotification('文档扫描器已就绪', 'success');
